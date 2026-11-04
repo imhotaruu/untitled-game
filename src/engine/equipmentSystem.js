@@ -1,6 +1,5 @@
 import { items } from "../data/items";
-
-const accessorySlots = ["accessory1", "accessory2", "accessory3"];
+import { equipmentSlots } from "../data/equipmentSlots";
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -38,13 +37,9 @@ function ensureEquipment(state) {
     state.equipment = {};
   }
 
-  if (!Object.prototype.hasOwnProperty.call(state.equipment, "weapon")) {
-    state.equipment.weapon = null;
-  }
-
-  accessorySlots.forEach((slotId) => {
-    if (!Object.prototype.hasOwnProperty.call(state.equipment, slotId)) {
-      state.equipment[slotId] = null;
+  equipmentSlots.forEach((slot) => {
+    if (!Object.prototype.hasOwnProperty.call(state.equipment, slot.id)) {
+      state.equipment[slot.id] = null;
     }
   });
 }
@@ -53,38 +48,21 @@ function hasInventoryItem(state, itemId) {
   ensureInventory(state);
 
   return state.inventory.items.some((entry) => {
-    return (entry.itemId || entry.id) === itemId;
+    return (entry.itemId || entry.id) === itemId && (entry.quantity ?? 1) > 0;
   });
 }
 
 function getDefaultSlotForItem(state, item) {
   ensureEquipment(state);
 
-  if (item.slot === "weapon") {
-    return "weapon";
-  }
-
-  if (item.slot === "accessory") {
-    return (
-      accessorySlots.find((slotId) => {
-        return !state.equipment[slotId];
-      }) || "accessory1"
-    );
-  }
-
-  return null;
+  const compatibleSlots = equipmentSlots.filter((slot) => slot.itemSlot === item.slot);
+  return compatibleSlots.find((slot) => !state.equipment[slot.id])?.id
+    || compatibleSlots[0]?.id
+    || null;
 }
 
 function canItemUseSlot(item, slotId) {
-  if (item.slot === "weapon") {
-    return slotId === "weapon";
-  }
-
-  if (item.slot === "accessory") {
-    return accessorySlots.includes(slotId);
-  }
-
-  return false;
+  return equipmentSlots.some((slot) => slot.id === slotId && slot.itemSlot === item.slot);
 }
 
 function clearExistingEquipmentInstance(state, itemId) {

@@ -1,5 +1,6 @@
 import { useId, useState } from "react";
 import { items } from "../data/items";
+import { equipmentSlots, formatEquipmentSlotLabel } from "../data/equipmentSlots";
 import {
   formatDerivedCombatStatValue,
   getDerivedCombatStats,
@@ -21,25 +22,9 @@ import InfoRow from "./ui/InfoRow";
 import StatMeter from "./ui/StatMeter";
 import ItemFeedbackPopup from "./ItemFeedbackPopup";
 import ArmorSlotPreview from "./ArmorSlotPreview";
+import EquipmentBonusText from "./ui/EquipmentBonusText";
 
-const equipmentSlots = [
-  {
-    id: "weapon",
-    label: "Weapon",
-  },
-  {
-    id: "accessory1",
-    label: "Accessory 1",
-  },
-  {
-    id: "accessory2",
-    label: "Accessory 2",
-  },
-  {
-    id: "accessory3",
-    label: "Accessory 3",
-  },
-];
+const otherEquipmentSlots = equipmentSlots.filter((slot) => slot.group !== "armor");
 
 const attributeOrder = [
   "strength",
@@ -417,12 +402,16 @@ function CharacterPage({
                 <span>Level {player.level}</span>
               </header>
 
-              <ArmorSlotPreview />
+              <ArmorSlotPreview
+                gameState={gameState}
+                onEquipItem={onEquipItem}
+                onUnequipSlot={onUnequipSlot}
+              />
 
-              <h3>Equipped Gear</h3>
+              <h3>Weapon & Accessories</h3>
 
               <div className="equipment-grid">
-                {equipmentSlots.map((slot) => {
+                {otherEquipmentSlots.map((slot) => {
                   const equippedItemId = equipment[slot.id];
                   const equippedItem = itemMap.get(equippedItemId);
 
@@ -602,20 +591,6 @@ function InventoryPanel({
   );
 }
 
-function EquipmentBonusText({ item }) {
-  const bonuses = formatEquipmentBonuses(item.equipmentBonuses);
-
-  if (bonuses.length === 0) {
-    return null;
-  }
-
-  return (
-    <p className="empty-note">
-      Bonuses: {bonuses.join(", ")}
-    </p>
-  );
-}
-
 function UseEffectText({ item }) {
   const useEffects = formatUseEffects(item.useEffects);
 
@@ -628,17 +603,6 @@ function UseEffectText({ item }) {
       Use: {useEffects.join(", ")}
     </p>
   );
-}
-
-function formatEquipmentBonuses(equipmentBonuses = {}) {
-  return Object.entries(equipmentBonuses).map(([statId, amount]) => {
-    const sign = amount >= 0 ? "+" : "";
-
-    return `${sign}${formatDerivedCombatStatValue(
-      statId,
-      amount
-    )} ${formatDerivedCombatStatLabel(statId)}`;
-  });
 }
 
 function formatUseEffects(useEffects = {}) {
@@ -659,12 +623,6 @@ function getEquippedSlotId(equipment, itemId) {
       return equippedItemId === itemId;
     })?.[0] || null
   );
-}
-
-function formatEquipmentSlotLabel(slotId) {
-  const slot = equipmentSlots.find((entry) => entry.id === slotId);
-
-  return slot?.label || slotId;
 }
 
 function formatItemType(item) {

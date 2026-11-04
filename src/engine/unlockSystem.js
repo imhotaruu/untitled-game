@@ -1,5 +1,12 @@
 export const unlockRules = [
   {
+    id: "unlock_training_armor",
+    type: "action",
+    targetId: "collect_training_armor",
+    condition: (state) => Boolean(state.unlocks?.systems?.basic_guard),
+    log: { type: "unlock", message: "Garron has training armor for you. Collect it at Stonefield House." },
+  },
+  {
     id: "unlock_forest_trail",
     type: "area",
     targetId: "forest_trail",

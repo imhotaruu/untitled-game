@@ -73,6 +73,23 @@ export const actions = [
   },
 
   {
+    id: "collect_training_armor",
+    label: "Collect Training Armor",
+    area: "stonefield_house",
+    unlocked: false,
+    oneTime: true,
+    description: "Garron has set aside a simple armor set for you now that you have learned Basic Guard.",
+    itemRewards: [
+      { itemId: "padded_training_cap", quantity: 1 },
+      { itemId: "padded_training_vest", quantity: 1 },
+      { itemId: "leather_training_bracers", quantity: 1 },
+      { itemId: "padded_training_leggings", quantity: 1 },
+    ],
+    log: "Collected Garron's training armor. Equip it from Character → Items.",
+    story: "Garron watches you settle into your guard, then nods toward a bundle by the door. ‘You are learning to keep your feet. Now let us keep the bruises down.’ Inside are a patched cap, a padded vest, leather bracers, and reinforced leggings. None of it is new, but every strap has been checked.",
+  },
+
+  {
     id: "explore_forest_edge",
     label: "Explore",
     area: "forest_edge",

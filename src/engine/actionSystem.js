@@ -14,6 +14,7 @@ import { processStoryEvents } from "./storySystem";
 import { recordActionProgress } from "./progressSystem";
 import { processUnlocks } from "./unlockSystem";
 import { grantItemRewards } from "./itemSystem";
+import { getActionUnavailableReason } from "./selectors";
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -363,6 +364,13 @@ export function performAction(currentState, action) {
 
   ensureProgressGroup(nextState);
   ensureUnlockGroups(nextState);
+
+  // Enforce availability in the engine as well as the UI, including repeated clicks.
+  const unavailableReason = getActionUnavailableReason(action, nextState.player.area, nextState.unlocks);
+  if (unavailableReason) {
+    nextState.actionLog = addLog(nextState.actionLog, createLogEntry("warning", unavailableReason));
+    return nextState;
+  }
 
   if (action.startsResting) {
     if (nextState.player.isResting) {

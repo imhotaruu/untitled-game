@@ -47,13 +47,14 @@ function isOneTimeActionCompleted(action, unlocks) {
 }
 
 export function getAvailableActions(actions, currentAreaId, unlocks) {
-  return actions.filter((action) => {
-    const isInCurrentArea = action.area === currentAreaId;
-    const unlocked = isActionUnlocked(action, unlocks);
-    const completed = isOneTimeActionCompleted(action, unlocks);
+  return actions.filter((action) => !getActionUnavailableReason(action, currentAreaId, unlocks));
+}
 
-    return isInCurrentArea && unlocked && !completed;
-  });
+export function getActionUnavailableReason(action, currentAreaId, unlocks) {
+  if (action.area !== currentAreaId) return "This action is not available in this area.";
+  if (!isActionUnlocked(action, unlocks)) return "This action is not unlocked yet.";
+  if (isOneTimeActionCompleted(action, unlocks)) return "This action has already been completed.";
+  return null;
 }
 
 export function getAreaById(areas, areaId) {

@@ -1,3 +1,5 @@
+import { equipmentSlots } from "./equipmentSlots";
+
 export const items = [
   {
     id: "training_stick",
@@ -35,6 +37,46 @@ export const items = [
     progression: {
       flags: ["has_threadbare_charm"],
     },
+  },
+  {
+    id: "padded_training_cap",
+    label: "Padded Training Cap",
+    type: "equipment",
+    slot: "head",
+    rarity: "common",
+    category: "Training Armor",
+    description: "A quilted cap with a few carefully mended seams. It softens the sting of a clumsy practice blow.",
+    equipmentBonuses: { defense: 1 },
+  },
+  {
+    id: "padded_training_vest",
+    label: "Padded Training Vest",
+    type: "equipment",
+    slot: "chest",
+    rarity: "common",
+    category: "Training Armor",
+    description: "Layers of sturdy cloth protect your torso while leaving enough room to practice your stance.",
+    equipmentBonuses: { defense: 2 },
+  },
+  {
+    id: "leather_training_bracers",
+    label: "Leather Training Bracers",
+    type: "equipment",
+    slot: "arms",
+    rarity: "common",
+    category: "Training Armor",
+    description: "A matching pair of worn leather guards. Garron has marked where they should sit on your forearms.",
+    equipmentBonuses: { guardPower: 1 },
+  },
+  {
+    id: "padded_training_leggings",
+    label: "Padded Training Leggings",
+    type: "equipment",
+    slot: "legs",
+    rarity: "common",
+    category: "Training Armor",
+    description: "Reinforced cloth leggings made for long afternoons of footwork and the occasional stumble.",
+    equipmentBonuses: { defense: 1 },
   },
   {
     id: "simple_poultice",
@@ -97,9 +139,6 @@ export const starterInventory = {
   ],
 };
 
-export const starterEquipment = {
-  weapon: null,
-  accessory1: "threadbare_charm",
-  accessory2: null,
-  accessory3: null,
-};
+export const starterEquipment = Object.fromEntries(
+  equipmentSlots.map((slot) => [slot.id, slot.id === "accessory1" ? "threadbare_charm" : null])
+);

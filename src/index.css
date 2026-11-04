@@ -943,6 +943,11 @@ button.primary {
   box-shadow: 0 0 12px var(--accent-glow);
 }
 
+.character-silhouette .body-part[data-equipped="true"] {
+  border-color: #86efac;
+  background: linear-gradient(110deg, #425e4c, #293a30);
+}
+
 .character-silhouette .body-part:focus-visible {
   outline: 2px solid var(--text);
   outline-offset: 3px;
@@ -994,6 +999,32 @@ button.primary {
   color: var(--text-sub);
   font-size: 0.76rem;
   line-height: 1.5;
+}
+
+.armor-equipped-item,
+.armor-compatible-items,
+.armor-compatible-item {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+
+.armor-compatible-items {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.armor-compatible-items h4 {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: 0.72rem;
+}
+
+.armor-equipped-item button,
+.armor-compatible-item button {
+  white-space: normal;
 }
 
 .silhouette-head {
