@@ -71,7 +71,6 @@ export default function ArmorSlotPreview({ gameState, onEquipItem, onUnequipSlot
             <strong>{equippedItem?.label || equippedItemId}</strong>
             {equippedItem && (
               <>
-                <p>{equippedItem.description}</p>
                 <EquipmentBonusText item={equippedItem} />
               </>
             )}
