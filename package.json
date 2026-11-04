@@ -13,6 +13,9 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
   },
+  "overrides": {
+    "minimatch": "11.0.1"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/react": "^19.2.14",

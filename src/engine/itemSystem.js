@@ -328,7 +328,7 @@ export function grantItemRewards(state, itemRewards = []) {
   return messages;
 }
 
-export function useInventoryItem(currentState, itemId) {
+export function consumeInventoryItem(currentState, itemId) {
   const nextState = clone(currentState);
   const item = getItemById(itemId);
 

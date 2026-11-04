@@ -9,7 +9,7 @@ import { createGameState } from "./engine/createGameState";
 import { performAction } from "./engine/actionSystem";
 import { moveToArea } from "./engine/areaSystem";
 import { equipItem, unequipSlot } from "./engine/equipmentSystem";
-import { useInventoryItem } from "./engine/itemSystem";
+import { consumeInventoryItem } from "./engine/itemSystem";
 import {
   getAvailableActions,
   getAreaById,
@@ -111,7 +111,7 @@ function App() {
   }
 
   function handleUseItem(itemId) {
-    setGameState((currentState) => useInventoryItem(currentState, itemId));
+    setGameState((currentState) => consumeInventoryItem(currentState, itemId));
   }
 
   function handleMoveToArea(area) {
