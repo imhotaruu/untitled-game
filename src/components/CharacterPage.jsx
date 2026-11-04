@@ -1,3 +1,4 @@
+import { useId, useState } from "react";
 import { items } from "../data/items";
 import {
   formatDerivedCombatStatValue,
@@ -18,6 +19,8 @@ import {
 } from "../utils/formatters";
 import InfoRow from "./ui/InfoRow";
 import StatMeter from "./ui/StatMeter";
+import ItemFeedbackPopup from "./ItemFeedbackPopup";
+import ArmorSlotPreview from "./ArmorSlotPreview";
 
 const equipmentSlots = [
   {
@@ -61,6 +64,8 @@ const derivedCombatStatOrder = [
 ];
 
 function CharacterPage({
+  itemFeedback,
+  onDismissItemFeedback,
   player,
   resources,
   gameState,
@@ -73,6 +78,8 @@ function CharacterPage({
   onUnequipSlot,
   onUseItem,
 }) {
+  const [inventoryTab, setInventoryTab] = useState("equipment");
+  const inventoryTabsId = useId();
   const itemMap = new Map(items.map((item) => [item.id, item]));
 
   const discoveredResources = Object.entries(resources).filter(
@@ -120,8 +127,31 @@ function CharacterPage({
     return !item;
   });
 
+  const inventoryGroups = [
+    { id: "equipment", label: "Equipment", items: equipmentInventoryItems },
+    { id: "consumables", label: "Consumables", items: consumableItems },
+    { id: "key-items", label: "Key Items", items: keyItems },
+    ...(unknownItems.length ? [{ id: "unknown", label: "Unknown", items: unknownItems }] : []),
+  ];
+  const selectedInventoryGroup = inventoryGroups.find((group) => group.id === inventoryTab)
+    || inventoryGroups[0];
+
+  function handleInventoryTabKeyDown(event, index) {
+    let nextIndex;
+    if (event.key === "ArrowRight") nextIndex = (index + 1) % inventoryGroups.length;
+    else if (event.key === "ArrowLeft") nextIndex = (index - 1 + inventoryGroups.length) % inventoryGroups.length;
+    else if (event.key === "Home") nextIndex = 0;
+    else if (event.key === "End") nextIndex = inventoryGroups.length - 1;
+    else return;
+
+    event.preventDefault();
+    setInventoryTab(inventoryGroups[nextIndex].id);
+    event.currentTarget.parentElement.querySelectorAll('[role="tab"]')[nextIndex].focus();
+  }
+
   return (
     <section className="character-page-panel">
+      <ItemFeedbackPopup feedback={itemFeedback} onDismiss={onDismissItemFeedback} />
       <div className="panel-header">
         <h2>Character</h2>
       </div>
@@ -377,9 +407,19 @@ function CharacterPage({
         )}
 
         {activeTab === "items" && (
-          <>
-            <section className="character-card character-card-wide">
-              <h3>Equipment</h3>
+          <div className="character-items-layout character-card-wide">
+            <section className="character-card character-appearance" aria-label="Character and equipped gear">
+              <header className="character-appearance-header">
+                <div>
+                  <h3>Character</h3>
+                  <p className="character-appearance-name">{player.name}</p>
+                </div>
+                <span>Level {player.level}</span>
+              </header>
+
+              <ArmorSlotPreview />
+
+              <h3>Equipped Gear</h3>
 
               <div className="equipment-grid">
                 {equipmentSlots.map((slot) => {
@@ -395,12 +435,11 @@ function CharacterPage({
                       {equippedItem ? (
                         <>
                           <strong>{equippedItem.label}</strong>
-                          <p>{equippedItem.description}</p>
-
                           <EquipmentBonusText item={equippedItem} />
 
                           <button
                             type="button"
+                            aria-label={`Unequip ${equippedItem.label} from ${slot.label}`}
                             onClick={() => onUnequipSlot(slot.id)}
                           >
                             Unequip
@@ -409,7 +448,7 @@ function CharacterPage({
                       ) : (
                         <>
                           <strong>Empty</strong>
-                          <p>No item equipped in this slot.</p>
+                          <p>No item equipped.</p>
                         </>
                       )}
                     </div>
@@ -418,72 +457,87 @@ function CharacterPage({
               </div>
             </section>
 
-            <section className="character-card character-card-wide">
+            <section className="character-card inventory-container" aria-label="Inventory">
               <h3>Inventory</h3>
 
-              <InventorySection
-                title="Equipment Items"
-                items={equipmentInventoryItems}
-                equipment={equipment}
-                onEquipItem={onEquipItem}
-                onUseItem={onUseItem}
-              />
+              <div className="inventory-tabs" role="tablist" aria-label="Inventory categories">
+                {inventoryGroups.map((group, index) => (
+                  <button
+                    key={group.id}
+                    type="button"
+                    role="tab"
+                    id={`${inventoryTabsId}-tab-${group.id}`}
+                    aria-controls={`${inventoryTabsId}-panel-${group.id}`}
+                    aria-selected={selectedInventoryGroup.id === group.id}
+                    tabIndex={selectedInventoryGroup.id === group.id ? 0 : -1}
+                    className={selectedInventoryGroup.id === group.id ? "primary" : ""}
+                    onClick={() => setInventoryTab(group.id)}
+                    onKeyDown={(event) => handleInventoryTabKeyDown(event, index)}
+                  >
+                    {group.label}
+                  </button>
+                ))}
+              </div>
 
-              <InventorySection
-                title="Consumables"
-                items={consumableItems}
-                onUseItem={onUseItem}
-              />
-
-              <InventorySection title="Key Items" items={keyItems} />
-
-              {unknownItems.length > 0 && (
-                <InventorySection title="Unknown Items" items={unknownItems} />
-              )}
-
-              {resolvedInventoryItems.length === 0 && (
-                <p className="empty-note">No items discovered yet.</p>
-              )}
+              {inventoryGroups.map((group) => (
+                <div
+                  key={group.id}
+                  role="tabpanel"
+                  id={`${inventoryTabsId}-panel-${group.id}`}
+                  aria-labelledby={`${inventoryTabsId}-tab-${group.id}`}
+                  hidden={selectedInventoryGroup.id !== group.id}
+                  tabIndex={0}
+                >
+                  {selectedInventoryGroup.id === group.id && (
+                    <InventoryPanel
+                      title={group.label}
+                      items={group.items}
+                      equipment={equipment}
+                      onEquipItem={onEquipItem}
+                      onUseItem={onUseItem}
+                    />
+                  )}
+                </div>
+              ))}
             </section>
-          </>
+          </div>
         )}
       </div>
     </section>
   );
 }
 
-function InventorySection({
+function InventoryPanel({
   title,
   items,
   equipment,
   onEquipItem,
   onUseItem,
 }) {
-  if (items.length === 0) {
-    return (
-      <div className="inventory-section">
-        <h4>{title}</h4>
-        <p className="empty-note">Nothing here yet.</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="inventory-section">
-      <h4>{title}</h4>
+    <section className="inventory-panel" aria-label={title}>
+      <header className="inventory-panel-header">
+        <h4>{title}</h4>
+        <span>{items.length} {items.length === 1 ? "type" : "types"}</span>
+      </header>
 
-      <div className="inventory-list">
+      {items.length === 0 && (
+        <p className="inventory-empty">No {title.toLowerCase()} yet.</p>
+      )}
+
+      <div className="inventory-grid">
         {items.map(({ itemId, item, quantity }) => {
           if (!item) {
             return (
-              <div key={itemId} className="inventory-item">
-                <div>
+              <article key={itemId} className="inventory-item" aria-label={itemId}>
+                <div className="inventory-item-heading">
                   <strong>{itemId}</strong>
-                  <p>Unknown item.</p>
+                  <span className="item-type-pill inventory-quantity" aria-label={`Quantity: ${quantity}`}>
+                    x{quantity}
+                  </span>
                 </div>
-
-                <span className="item-type-pill">x{quantity}</span>
-              </div>
+                <p>Unknown item.</p>
+              </article>
             );
           }
 
@@ -492,51 +546,59 @@ function InventorySection({
           const canUse = item.type === "consumable";
 
           return (
-            <div key={item.id} className="inventory-item">
-              <div>
+            <article key={item.id} className="inventory-item" aria-label={item.label}>
+              <div className="inventory-item-heading">
                 <strong>{item.label}</strong>
-                <p>{item.description}</p>
-
-                <EquipmentBonusText item={item} />
-                <UseEffectText item={item} />
-
-                {equippedSlotId && (
-                  <p className="empty-note">
-                    Equipped in {formatEquipmentSlotLabel(equippedSlotId)}.
-                  </p>
-                )}
+                <span className="item-type-pill inventory-quantity" aria-label={`Quantity: ${quantity}`}>
+                  x{quantity}
+                </span>
               </div>
 
               <div className="inventory-item-meta">
                 <span className="item-type-pill">
                   {formatItemType(item)}
                 </span>
-                <span className="item-type-pill">{item.category}</span>
-                <span className="item-type-pill">x{quantity}</span>
-
-                {canEquip && (
-                  <button
-                    type="button"
-                    onClick={() => onEquipItem(item.id)}
-                  >
-                    Equip
-                  </button>
-                )}
-
-                {canUse && (
-                  <button
-                    type="button"
-                    onClick={() => onUseItem(item.id)}
-                  >
-                    Use
-                  </button>
-                )}
+                {item.category && <span className="item-type-pill">{item.category}</span>}
               </div>
-            </div>
+
+              <div className="inventory-item-details">
+                <p>{item.description}</p>
+                <EquipmentBonusText item={item} />
+                <UseEffectText item={item} />
+              </div>
+
+              {(equippedSlotId || canEquip || canUse) && (
+                <div className="inventory-item-actions">
+                  {equippedSlotId && (
+                    <p className="inventory-equipped-status">
+                      Equipped in {formatEquipmentSlotLabel(equippedSlotId)}
+                    </p>
+                  )}
+                  {canEquip && (
+                    <button
+                      type="button"
+                      aria-label={`Equip ${item.label}`}
+                      onClick={() => onEquipItem(item.id)}
+                    >
+                      Equip
+                    </button>
+                  )}
+                  {canUse && (
+                    <button
+                      type="button"
+                      aria-label={`Use ${item.label}`}
+                      onClick={() => onUseItem(item.id)}
+                    >
+                      Use
+                    </button>
+                  )}
+                </div>
+              )}
+            </article>
           );
         })}
       </div>
-    </div>
+    </section>
   );
 }
 

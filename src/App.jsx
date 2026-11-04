@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { processGameTick } from "./engine/tickSystem";
 
 import { actions } from "./data/actions";
@@ -10,6 +10,7 @@ import { performAction } from "./engine/actionSystem";
 import { moveToArea } from "./engine/areaSystem";
 import { equipItem, unequipSlot } from "./engine/equipmentSystem";
 import { consumeInventoryItem } from "./engine/itemSystem";
+import { createItemFeedback } from "./utils/itemFeedback";
 import {
   getAvailableActions,
   getAreaById,
@@ -34,9 +35,34 @@ import QuickOverviewSidebar from "./components/QuickOverviewSidebar";
 import SaveSlotModal from "./components/SaveSlotModal";
 
 function App() {
-  const [gameState, setGameState] = useState(() => {
-    return loadLastUsedSave() || createGameState();
-  });
+  // UI feedback shares an atomic update with gameplay, but is never saved.
+  const [session, setSession] = useState(() => ({
+    gameState: loadLastUsedSave() || createGameState(),
+    itemFeedback: null,
+    feedbackSequence: 0,
+  }));
+  const { gameState, itemFeedback } = session;
+
+  const setGameState = useCallback((update) => {
+    setSession((current) => {
+      const nextGameState = typeof update === "function"
+        ? update(current.gameState)
+        : update;
+      return nextGameState === current.gameState
+        ? current
+        : { ...current, gameState: nextGameState };
+    });
+  }, []);
+
+  const dismissItemFeedback = useCallback((expectedFeedback = null) => {
+    setSession((current) => {
+      // An old timer must never dismiss a newer interaction's feedback.
+      if (expectedFeedback && current.itemFeedback !== expectedFeedback) {
+        return current;
+      }
+      return { ...current, itemFeedback: null };
+    });
+  }, []);
 
   const [activeModal, setActiveModal] = useState(null);
   const [saveSlots, setSaveSlots] = useState(() => getSaveSlotSummaries());
@@ -74,7 +100,7 @@ function App() {
     }, 100);
 
     return () => clearInterval(intervalId);
-  }, []);
+  }, [setGameState]);
 
   function addSystemLog(currentState, message) {
     return {
@@ -88,6 +114,7 @@ function App() {
   }
 
   function openModal(modalType) {
+    dismissItemFeedback();
     refreshSaveSlots();
     setActiveModal(modalType);
   }
@@ -101,17 +128,41 @@ function App() {
   }
 
   function handleEquipItem(itemId, preferredSlotId = null) {
-    setGameState((currentState) =>
-      equipItem(currentState, itemId, preferredSlotId)
-    );
+    handleItemInteraction("equip", itemId, preferredSlotId);
   }
 
   function handleUnequipSlot(slotId) {
-    setGameState((currentState) => unequipSlot(currentState, slotId));
+    handleItemInteraction("unequip", null, slotId);
   }
 
   function handleUseItem(itemId) {
-    setGameState((currentState) => consumeInventoryItem(currentState, itemId));
+    handleItemInteraction("use", itemId);
+  }
+
+  function handleItemInteraction(type, itemId, slotId = null) {
+    setSession((current) => {
+      const before = current.gameState;
+      const after = type === "use"
+        ? consumeInventoryItem(before, itemId)
+        : type === "equip"
+          ? equipItem(before, itemId, slotId)
+          : unequipSlot(before, slotId);
+      const feedbackSequence = current.feedbackSequence + 1;
+
+      return {
+        gameState: after,
+        feedbackSequence,
+        itemFeedback: {
+          ...createItemFeedback(before, after, { type, itemId, slotId }),
+          id: feedbackSequence,
+        },
+      };
+    });
+  }
+
+  function handleChangePage(page) {
+    dismissItemFeedback();
+    setActivePage(page);
   }
 
   function handleMoveToArea(area) {
@@ -188,7 +239,7 @@ function App() {
         activePage={activePage}
         currentAreaLabel={currentAreaLabel}
         player={player}
-        onChangePage={setActivePage}
+        onChangePage={handleChangePage}
         onOpenModal={openModal}
       />
 
@@ -226,6 +277,8 @@ function App() {
           </>
         ) : (
           <CharacterPage
+            itemFeedback={itemFeedback}
+            onDismissItemFeedback={dismissItemFeedback}
             player={player}
             resources={resources}
             gameState={gameState}

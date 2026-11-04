@@ -429,6 +429,7 @@ button.primary {
 /* ─── Character page ────────────────────────────────────── */
 
 .character-page-panel {
+  position: relative;
   min-height: 0;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -437,6 +438,70 @@ button.primary {
   box-shadow: var(--shadow-md);
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+/* A non-interactive overlay: controls beneath it stay usable. */
+.item-feedback-region {
+  position: absolute;
+  z-index: 10;
+  width: min(320px, calc(100% - 32px));
+  pointer-events: none;
+}
+
+.item-feedback-region[data-position="center"] {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.item-feedback-region[data-position="bottom-center"] {
+  position: fixed;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.item-feedback-popup {
+  padding: 18px 20px;
+  border: 1px solid #62626c;
+  border-radius: var(--radius-md);
+  background: linear-gradient(150deg, #222226, #111113);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.item-feedback-popup h3 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 12px;
+  font-size: 0.84rem;
+}
+
+.item-feedback-popup h3 span {
+  color: #a5b4fc;
+}
+
+.item-feedback-popup[data-tone="success"] h3 span {
+  color: #86efac;
+}
+
+.item-feedback-name {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.item-feedback-popup ul {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: #d4d4d8;
+  font-size: 0.8rem;
+  line-height: 1.5;
 }
 
 .character-page-tabs {
@@ -813,9 +878,163 @@ button.primary {
 
 /* ─── Items / equipment ─────────────────────────────────── */
 
+.character-items-layout {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+.character-appearance-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.character-appearance-name {
+  margin: 8px 0 0;
+  color: var(--text);
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.character-appearance-header > span {
+  flex-shrink: 0;
+  color: var(--text-sub);
+  font-size: 0.76rem;
+}
+
+.character-portrait {
+  position: relative;
+  min-height: 280px;
+  height: clamp(280px, 36vh, 360px);
+  display: grid;
+  place-items: center;
+  padding-top: 24px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  background: radial-gradient(ellipse at 50% 45%, #232328 0%, #101012 65%);
+}
+
+/* Simple UI mannequin; replaceable with the game's own character artwork. */
+.character-silhouette {
+  position: relative;
+  width: 140px;
+  height: 220px;
+}
+
+.character-silhouette .body-part {
+  position: absolute;
+  display: block;
+  padding: 0;
+  background: linear-gradient(110deg, #505058, #303036);
+  border: 1px solid #666670;
+  transform: rotate(var(--part-rotation, 0deg));
+  transition: none;
+}
+
+.character-silhouette .body-part:hover,
+.character-silhouette .body-part:focus-visible {
+  z-index: 1;
+  background: linear-gradient(110deg, #777780, #474750);
+  border-color: var(--text);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.character-silhouette .body-part:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
+
+.character-silhouette .body-part[aria-pressed="true"] {
+  border-color: var(--gold);
+  background: linear-gradient(110deg, #746744, #403b2d);
+  box-shadow: 0 0 0 1px var(--gold);
+}
+
+.armor-slot-preview {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.armor-hover-label {
+  position: absolute;
+  top: 14px;
+  left: 12px;
+  right: 12px;
+  color: var(--text-sub);
+  text-align: center;
+  font-size: 0.76rem;
+}
+
+.armor-slot-details {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+}
+
+.armor-slot-details-heading {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.78rem;
+}
+
+.armor-slot-details-heading span {
+  color: var(--text-sub);
+}
+
+.armor-slot-details p {
+  margin: 8px 0 0;
+  color: var(--text-sub);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.silhouette-head {
+  top: 0;
+  left: 48px;
+  width: 44px;
+  height: 46px;
+  border-radius: 45%;
+}
+
+.silhouette-body {
+  top: 52px;
+  left: 40px;
+  width: 60px;
+  height: 84px;
+  border-radius: 18px 18px 12px 12px;
+}
+
+.silhouette-arm {
+  top: 56px;
+  width: 24px;
+  height: 92px;
+  border-radius: 12px;
+}
+
+.silhouette-arm-left { left: 10px; --part-rotation: 9deg; }
+.silhouette-arm-right { right: 10px; --part-rotation: -9deg; }
+
+.silhouette-leg {
+  top: 140px;
+  width: 25px;
+  height: 80px;
+  border-radius: 8px;
+}
+
+.silhouette-leg-left { left: 42px; }
+.silhouette-leg-right { right: 42px; }
+
 .equipment-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -853,9 +1072,10 @@ button.primary {
   line-height: 1.5;
 }
 
-.inventory-list {
+.inventory-grid {
   display: grid;
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
+  gap: 10px;
 }
 
 .inventory-item {
@@ -864,15 +1084,50 @@ button.primary {
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.02);
   padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-wrap: anywhere;
+}
+
+.inventory-item-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.inventory-item-heading strong {
+  line-height: 1.5;
+}
+
+.inventory-quantity {
+  flex-shrink: 0;
+  color: var(--text);
+}
+
+.inventory-item-details {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: center;
+  gap: 8px;
+}
+
+.inventory-item-actions {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.inventory-item-actions button {
+  width: 100%;
+}
+
+.inventory-item .inventory-equipped-status {
+  color: #86efac;
 }
 
 .inventory-item-meta {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   flex-wrap: wrap;
   gap: 6px;
 }
@@ -881,7 +1136,7 @@ button.primary {
   border: 1px solid var(--line-soft);
   border-radius: 999px;
   padding: 4px 8px;
-  color: var(--text-muted);
+  color: var(--text-sub);
   background: rgba(255, 255, 255, 0.02);
   font-size: 0.66rem;
   letter-spacing: 0.08em;
@@ -890,23 +1145,74 @@ button.primary {
 
 /* ─── Inventory sections ────────────────────────────────── */
 
-.inventory-section {
+.inventory-container {
+  min-width: 0;
   display: grid;
+  gap: 12px;
+}
+
+.inventory-container > h3 {
+  margin: 4px 0 0;
+  color: var(--text-sub);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.inventory-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.inventory-tabs button {
+  padding: 8px 10px;
+  font-size: 0.68rem;
+}
+
+.inventory-tabs button:focus-visible,
+.inventory-container [role="tabpanel"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.inventory-panel {
+  min-width: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.inventory-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
-.inventory-section + .inventory-section {
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid var(--line-soft);
-}
-
-.inventory-section h4 {
+.inventory-panel-header h4 {
   margin: 0;
-  color: var(--text-muted);
+  color: var(--text);
   font-size: 0.66rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
+}
+
+.inventory-panel-header span {
+  color: var(--text-sub);
+  font-size: 0.72rem;
+}
+
+.inventory-empty {
+  margin: 0;
+  padding: 24px 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  color: var(--text-sub);
+  font-size: 0.78rem;
 }
 
 /* ─── Typed action logs ─────────────────────────────────── */
@@ -999,17 +1305,15 @@ button.primary {
   font-weight: 700;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 600px) {
   .equipment-grid {
     grid-template-columns: 1fr;
   }
+}
 
-  .inventory-item {
-    grid-template-columns: 1fr;
-  }
-
-  .inventory-item-meta {
-    justify-content: flex-start;
+@media (max-width: 900px) {
+  .character-items-layout {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
