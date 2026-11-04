@@ -11,6 +11,7 @@ function Topbar({
         <button
           className={activePage === "main" ? "nav-btn active" : "nav-btn"}
           type="button"
+          aria-current={activePage === "main" ? "page" : undefined}
           onClick={() => onChangePage("main")}
         >
           Main
@@ -19,26 +20,17 @@ function Topbar({
         <button
           className={activePage === "character" ? "nav-btn active" : "nav-btn"}
           type="button"
+          aria-current={activePage === "character" ? "page" : undefined}
           onClick={() => onChangePage("character")}
         >
           Character
         </button>
 
-        <button className="nav-btn" type="button">
-          Story
-        </button>
-
-        <button className="nav-btn" type="button">
-          Relationships
-        </button>
-
-        <button className="nav-btn" type="button">
-          Party
-        </button>
-
-        <button className="nav-btn" type="button">
-          Codex
-        </button>
+        {["Story", "Relationships", "Party", "Codex"].map((label) => (
+          <button key={label} className="nav-btn nav-upcoming" type="button" disabled>
+            {label}<span>Soon</span>
+          </button>
+        ))}
       </nav>
 
       <div className="topbar-right">

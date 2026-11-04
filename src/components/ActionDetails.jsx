@@ -1,11 +1,10 @@
 import { items } from "../data/items";
 import { formatStatLabel } from "../utils/formatters";
 
-function ActionDetails({ action, resources }) {
+function ActionDetails({ action, resources, id }) {
   if (!action) {
     return (
-      <div className="action-details">
-        <h3>Action Details</h3>
+      <div className="action-details" id={id}>
         <p>No action selected.</p>
       </div>
     );
@@ -16,7 +15,6 @@ function ActionDetails({ action, resources }) {
   const restore = action.restore || {};
   const itemRewards = action.itemRewards || [];
   const progressRewards = action.progressRewards || {};
-  const progressMilestones = action.progressMilestones || [];
 
   const hasStatCost = Object.keys(statCost).length > 0;
   const hasResourceCost = Object.keys(resourceCost).length > 0;
@@ -24,12 +22,9 @@ function ActionDetails({ action, resources }) {
   const hasRestore = Object.keys(restore).length > 0;
   const hasItemRewards = itemRewards.length > 0;
   const hasProgressRewards = Object.keys(progressRewards).length > 0;
-  const hasProgressMilestones = progressMilestones.length > 0;
 
   return (
-    <div className="action-details">
-      <h3>{action.label}</h3>
-
+    <div className="action-details" id={id}>
       {(action.description || action.log) && (
         <p>{action.description || action.log}</p>
       )}
@@ -94,19 +89,6 @@ function ActionDetails({ action, resources }) {
             .map(([progressKey, amount]) => {
               const sign = amount >= 0 ? "+" : "";
               return `${sign}${amount} ${formatProgressLabel(progressKey)}`;
-            })
-            .join(", ")}
-        </p>
-      )}
-
-      {hasProgressMilestones && (
-        <p>
-          Milestone:{" "}
-          {progressMilestones
-            .map((milestone) => {
-              return `${formatProgressLabel(milestone.progressKey)} ${
-                milestone.threshold
-              }`;
             })
             .join(", ")}
         </p>

@@ -66,7 +66,6 @@ function App() {
 
   const [activeModal, setActiveModal] = useState(null);
   const [saveSlots, setSaveSlots] = useState(() => getSaveSlotSummaries());
-  const [selectedActionId, setSelectedActionId] = useState(null);
   const [activePage, setActivePage] = useState("main");
   const [characterTab, setCharacterTab] = useState("overview");
 
@@ -77,14 +76,6 @@ function App() {
   const discoveredAreaGroups = getDiscoveredAreaGroups(areas, unlocks);
   const availableActions = getAvailableActions(actions, player.area, unlocks);
   const discoveredResources = getDiscoveredResources(resources);
-
-  const latestStoryBeat = storyLog[0] || "No major story events yet.";
-  const currentAreaActions = availableActions.map((action) => action.label);
-
-  const selectedAction =
-    availableActions.find((action) => action.id === selectedActionId) ||
-    availableActions[0] ||
-    null;
 
   useEffect(() => {
     let lastTime = Date.now();
@@ -166,12 +157,10 @@ function App() {
   }
 
   function handleMoveToArea(area) {
-    setSelectedActionId(null);
     setGameState((currentState) => moveToArea(currentState, area));
   }
 
   function handleAction(action) {
-    setSelectedActionId(action.id);
     setGameState((currentState) => performAction(currentState, action));
   }
 
@@ -195,7 +184,6 @@ function App() {
       return;
     }
 
-    setSelectedActionId(null);
     setGameState(addSystemLog(savedState, `Loaded Slot ${slotId}.`));
     refreshSaveSlots();
     closeModal();
@@ -213,7 +201,6 @@ function App() {
   function handleResetCurrentGame() {
     const resetState = createGameState();
 
-    setSelectedActionId(null);
     setActivePage("main");
     setCharacterTab("overview");
     setGameState(addSystemLog(resetState, "Current game reset."));
@@ -225,7 +212,6 @@ function App() {
 
     const resetState = createGameState();
 
-    setSelectedActionId(null);
     setActivePage("main");
     setCharacterTab("overview");
     setGameState(addSystemLog(resetState, "All save slots deleted."));
@@ -247,7 +233,7 @@ function App() {
         className={
           activePage === "character"
             ? "game-layout character-layout"
-            : "game-layout"
+            : "game-layout main-layout"
         }
       >
         {activePage === "main" ? (
@@ -261,12 +247,8 @@ function App() {
               currentAreaLabel={currentAreaLabel}
               discoveredAreaGroups={discoveredAreaGroups}
               availableActions={availableActions}
-              selectedAction={selectedAction}
-              latestStoryBeat={latestStoryBeat}
-              currentAreaActions={currentAreaActions}
               onMoveToArea={handleMoveToArea}
               onAction={handleAction}
-              onSelectAction={setSelectedActionId}
             />
 
             <QuickOverviewSidebar

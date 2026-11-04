@@ -4,19 +4,18 @@ import StatMeter from "./ui/StatMeter";
 
 function QuickOverviewSidebar({ player, resources, discoveredResources }) {
   return (
-    <aside className="panel stats-panel">
+    <aside className="panel stats-panel" aria-label="Player status and resources">
       <div className="panel-header">
-        <h2>Character & Resources</h2>
+        <div className="quick-player-heading">
+          <strong>{player.name}</strong>
+          <span>Level {player.level}</span>
+        </div>
+        <p className="resting-status" role="status">
+          {player.isResting ? "Resting" : "Not resting"}
+        </p>
       </div>
 
       <div className="stats-content">
-        <InfoGroup title="Character">
-          <InfoRow label="Name" value={player.name} />
-          <InfoRow label="Gender" value={player.gender} />
-          <InfoRow label="Level" value={player.level} />
-          <InfoRow label="Path" value={player.path} />
-        </InfoGroup>
-
         <InfoGroup title="Status">
           <StatMeter
             label="Health"

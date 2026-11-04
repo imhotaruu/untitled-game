@@ -1,166 +1,105 @@
+import { useId, useState } from "react";
 import ActionDetails from "./ActionDetails";
+import HistoryPanel from "./HistoryPanel";
+import StoryPanel from "./StoryPanel";
 import Panel from "./ui/Panel";
 
-function MainPage({
-  player,
-  resources,
-  actionLog,
-  storyLog,
-  currentArea,
-  currentAreaLabel,
-  discoveredAreaGroups,
-  availableActions,
-  selectedAction,
-  latestStoryBeat,
-  currentAreaActions,
-  onMoveToArea,
-  onAction,
-  onSelectAction,
+export default function MainPage({
+  player, resources, actionLog, storyLog, currentArea, currentAreaLabel,
+  discoveredAreaGroups, availableActions, onMoveToArea, onAction,
 }) {
-  return (
-    <section className="main-column">
-      <div className="play-row">
-        <Panel title="Areas">
-          <div className="area-group-list">
-            {discoveredAreaGroups.map((group) => (
-              <div key={group.category} className="area-group">
-                <h3>{group.category}</h3>
+  const [historyRevision, setHistoryRevision] = useState(0);
+  const sceneId = useId();
 
-                <div className="button-list area-button-list">
-                  {group.areas.map((area) => (
-                    <button
-                      key={area.id}
-                      type="button"
-                      className={area.id === player.area ? "primary" : ""}
-                      onClick={() => onMoveToArea(area)}
-                    >
-                      {area.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Panel>
+  function showActionHistory() {
+    setHistoryRevision((current) => current + 1);
+  }
 
-        <Panel title="Actions" className="actions-panel">
-          <div className="action-panel-body">
-            <div className="button-list action-list-scroll">
-              {availableActions.map((action) => {
-                const isRestingAction =
-                  action.startsResting && player.isResting;
-                const isSelected = selectedAction?.id === action.id;
-
-                return (
-                  <button
-                    key={action.id}
-                    type="button"
-                    className={isRestingAction || isSelected ? "primary" : ""}
-                    disabled={isRestingAction}
-                    onMouseEnter={() => onSelectAction(action.id)}
-                    onFocus={() => onSelectAction(action.id)}
-                    onClick={() => onAction(action)}
-                  >
-                    {isRestingAction ? "Resting..." : action.label}
-                  </button>
-                );
-              })}
-
-              {availableActions.length === 0 && (
-                <p className="empty-note">No actions available here.</p>
-              )}
+  return <>
+    <Panel title="Locations" className="locations-panel">
+      <nav className="area-group-list" aria-label="Travel locations">
+        {discoveredAreaGroups.map((group) => (
+          <div key={group.category} className="area-group">
+            <h3>{group.category}</h3>
+            <div className="button-list area-button-list">
+              {group.areas.map((area) => (
+                <button key={area.id} type="button"
+                  className={area.id === player.area ? "primary" : ""}
+                  aria-current={area.id === player.area ? "location" : undefined}
+                  onClick={() => {
+                    showActionHistory();
+                    onMoveToArea(area);
+                  }}>
+                  {area.label}
+                </button>
+              ))}
             </div>
-
-            <ActionDetails action={selectedAction} resources={resources} />
           </div>
-        </Panel>
+        ))}
+      </nav>
+    </Panel>
 
-        <section className="panel story-panel">
-          <div className="scene-header-block">
-            <h1>{currentAreaLabel}</h1>
+    <section className="panel scene-panel" aria-labelledby={sceneId}>
+      <header className="scene-header-block">
+        <div className="scene-heading">
+          <h1 id={sceneId}>{currentAreaLabel}</h1>
+          <span className="scene-category">{currentArea?.category || "Unknown"}</span>
+        </div>
+        <p>{currentArea?.description || "You are somewhere unfamiliar. The path ahead is unclear."}</p>
+      </header>
 
-            <p>
-              {currentArea?.description ||
-                "You are somewhere unfamiliar. The path ahead is unclear."}
-            </p>
-          </div>
+      <div className="scene-content-split">
+        <ActionButtons key={player.area} actions={availableActions} resources={resources}
+          player={player} onAction={(action) => {
+            showActionHistory();
+            onAction(action);
+          }} />
 
-          <div className="scene-dashboard">
-            <article className="scene-card scene-card-large">
-              <h3>Latest Story Beat</h3>
-              <p>{latestStoryBeat}</p>
-            </article>
-
-            <article className="scene-card">
-              <h3>Available Actions</h3>
-
-              {currentAreaActions.length > 0 ? (
-                <div className="scene-action-chips">
-                  {currentAreaActions.map((actionLabel) => (
-                    <span key={actionLabel}>{actionLabel}</span>
-                  ))}
-                </div>
-              ) : (
-                <p>No actions available here.</p>
-              )}
-            </article>
-
-            <article className="scene-card">
-              <h3>Area Type</h3>
-              <p>{currentArea?.category || "Unknown"}</p>
-            </article>
-          </div>
-        </section>
+        <StoryPanel entries={storyLog} />
       </div>
+    </section>
 
-      <div className="log-row">
-        <Panel title="Action Log">
-          <ul className="log-list">
-            {actionLog.map((entry, index) => (
-              <LogEntry key={getLogKey(entry, index)} entry={entry} />
-            ))}
-          </ul>
-        </Panel>
+    <HistoryPanel actionLog={actionLog} resetKey={historyRevision} />
+  </>;
+}
 
-        <Panel title="Story Log">
-          <ul className="log-list">
-            {storyLog.map((entry, index) => (
-              <li key={`${entry}-${index}`}>{entry}</li>
-            ))}
-          </ul>
-        </Panel>
+function ActionButtons({ actions, resources, player, onAction }) {
+  const [previewId, setPreviewId] = useState(null);
+  const detailsId = useId();
+  const preview = actions.find((action) => action.id === previewId);
+
+  return (
+    <section className="scene-actions" aria-label="Available actions">
+      <h2>Actions</h2>
+      <div className="main-action-grid">
+        {actions.map((action) => {
+          const isResting = Boolean(action.startsResting && player.isResting);
+          return (
+            <button key={action.id} type="button"
+              className={isResting ? "main-action-button primary" : "main-action-button"}
+              data-previewed={preview?.id === action.id} disabled={isResting}
+              aria-controls={detailsId}
+              aria-describedby={preview?.id === action.id ? detailsId : undefined}
+              onPointerEnter={() => setPreviewId(action.id)}
+              onFocus={() => setPreviewId(action.id)}
+              onClick={() => {
+                setPreviewId(action.id);
+                onAction(action);
+              }}>
+              {isResting ? "Resting…" : action.label}
+            </button>
+          );
+        })}
       </div>
+      {actions.length > 0 ? (
+        <div className="action-preview" id={detailsId}>
+          {preview ? <>
+            <h3>{preview.label}</h3>
+            {preview.oneTime && <span className="action-once-label">One-time action</span>}
+            <ActionDetails action={preview} resources={resources} />
+          </> : <p className="action-preview-hint">Hover or focus an action to see what it does. Click to perform it.</p>}
+        </div>
+      ) : <p className="empty-note">No actions available here yet. You can visit another location.</p>}
     </section>
   );
 }
-
-function LogEntry({ entry }) {
-  const message = getLogMessage(entry);
-  const type = getLogType(entry);
-
-  return <li className={`log-entry log-entry-${type}`}>{message}</li>;
-}
-
-function getLogMessage(entry) {
-  if (typeof entry === "string") {
-    return entry;
-  }
-
-  return entry?.message || "";
-}
-
-function getLogType(entry) {
-  if (typeof entry === "string") {
-    return "default";
-  }
-
-  return entry?.type || "default";
-}
-
-function getLogKey(entry, index) {
-  const message = getLogMessage(entry);
-
-  return `${message}-${index}`;
-}
-
-export default MainPage;
