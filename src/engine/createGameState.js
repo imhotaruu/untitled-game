@@ -25,6 +25,7 @@ export function createGameState() {
 
     inventory: clone(starterInventory),
     equipment: clone(starterEquipment),
+    combat: null,
 
     actionLog: ["Prototype initialized."],
     storyLog: ["Story shell loaded."],

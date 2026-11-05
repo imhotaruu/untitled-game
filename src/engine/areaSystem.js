@@ -12,6 +12,7 @@ function addLog(logList, message) {
 }
 
 export function moveToArea(currentState, area) {
+  if (currentState.combat) return currentState;
   const nextState = clone(currentState);
 
   if (nextState.player.isResting) {

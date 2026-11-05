@@ -1,5 +1,12 @@
 export const unlockRules = [
   {
+    id: "unlock_garron_spar",
+    type: "action",
+    targetId: "spar_with_garron",
+    condition: (state) => Boolean(state.unlocks?.systems?.basic_guard),
+    log: { type: "unlock", message: "Garron is ready to spar with you at Stonefield House." },
+  },
+  {
     id: "unlock_training_armor",
     type: "action",
     targetId: "collect_training_armor",

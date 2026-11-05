@@ -7,6 +7,7 @@ import { upgrades } from "./data/upgrades";
 
 import { createGameState } from "./engine/createGameState";
 import { performAction } from "./engine/actionSystem";
+import { dismissCombat, performCombatMove } from "./engine/combatSystem";
 import { moveToArea } from "./engine/areaSystem";
 import { equipItem, unequipSlot } from "./engine/equipmentSystem";
 import { consumeInventoryItem } from "./engine/itemSystem";
@@ -33,6 +34,8 @@ import MainPage from "./components/MainPage";
 import CharacterPage from "./components/CharacterPage";
 import QuickOverviewSidebar from "./components/QuickOverviewSidebar";
 import SaveSlotModal from "./components/SaveSlotModal";
+import BattleConfirmModal from "./components/BattleConfirmModal";
+import CombatScreen from "./components/CombatScreen";
 
 function App() {
   // UI feedback shares an atomic update with gameplay, but is never saved.
@@ -68,6 +71,9 @@ function App() {
   const [saveSlots, setSaveSlots] = useState(() => getSaveSlotSummaries());
   const [activePage, setActivePage] = useState("main");
   const [characterTab, setCharacterTab] = useState("overview");
+  const [pendingBattleId, setPendingBattleId] = useState(null);
+  const [focusActionId, setFocusActionId] = useState(null);
+  const pendingBattle = actions.find((action) => action.id === pendingBattleId);
 
   const { player, resources, actionLog, storyLog, unlocks } = gameState;
 
@@ -105,6 +111,7 @@ function App() {
   }
 
   function openModal(modalType) {
+    setPendingBattleId(null);
     dismissItemFeedback();
     refreshSaveSlots();
     setActiveModal(modalType);
@@ -152,16 +159,41 @@ function App() {
   }
 
   function handleChangePage(page) {
+    if (gameState.combat && page !== "main") return;
     dismissItemFeedback();
+    setFocusActionId(null);
     setActivePage(page);
   }
 
   function handleMoveToArea(area) {
+    setFocusActionId(null);
     setGameState((currentState) => moveToArea(currentState, area));
   }
 
   function handleAction(action) {
+    if (action.encounterId) {
+      setPendingBattleId(action.id);
+      return;
+    }
     setGameState((currentState) => performAction(currentState, action));
+  }
+
+  function handleConfirmBattle() {
+    if (!pendingBattle) return;
+    const seed = Date.now();
+    setGameState((currentState) => performAction(currentState, pendingBattle, { seed }));
+    setPendingBattleId(null);
+    setFocusActionId(null);
+  }
+
+  function handleCombatMove(moveId) {
+    setGameState((currentState) => performCombatMove(currentState, moveId));
+  }
+
+  function handleDismissCombat() {
+    setFocusActionId(actions.find((action) => action.encounterId === gameState.combat?.encounterId)?.id || null);
+    setActivePage("main");
+    setGameState(dismissCombat);
   }
 
   function handleSaveToSlot(slotId) {
@@ -185,6 +217,9 @@ function App() {
     }
 
     setGameState(addSystemLog(savedState, `Loaded Slot ${slotId}.`));
+    setFocusActionId(null);
+    setPendingBattleId(null);
+    if (savedState.combat) setActivePage("main");
     refreshSaveSlots();
     closeModal();
   }
@@ -199,6 +234,8 @@ function App() {
   }
 
   function handleResetCurrentGame() {
+    setFocusActionId(null);
+    setPendingBattleId(null);
     const resetState = createGameState();
 
     setActivePage("main");
@@ -208,6 +245,8 @@ function App() {
   }
 
   function handleDeleteAllSaves() {
+    setFocusActionId(null);
+    setPendingBattleId(null);
     clearAllSaveSlots();
 
     const resetState = createGameState();
@@ -220,7 +259,16 @@ function App() {
   }
 
   return (
-    <div className="app">
+    <div className={gameState.combat ? "app app-combat" : "app"}>
+      {gameState.combat ? <CombatScreen
+        magicUnlocked={Boolean(gameState.unlocks?.systems?.magic)}
+        inventory={gameState.inventory}
+        combat={gameState.combat}
+        areaLabel={currentAreaLabel}
+        onMove={handleCombatMove}
+        onDismiss={handleDismissCombat}
+        onOpenModal={openModal}
+      /> : <>
       <Topbar
         activePage={activePage}
         currentAreaLabel={currentAreaLabel}
@@ -239,6 +287,7 @@ function App() {
         {activePage === "main" ? (
           <>
             <MainPage
+              focusActionId={focusActionId}
               player={player}
               resources={resources}
               actionLog={actionLog}
@@ -251,11 +300,6 @@ function App() {
               onAction={handleAction}
             />
 
-            <QuickOverviewSidebar
-              player={player}
-              resources={resources}
-              discoveredResources={discoveredResources}
-            />
           </>
         ) : (
           <CharacterPage
@@ -274,7 +318,19 @@ function App() {
             onUseItem={handleUseItem}
           />
         )}
+        <QuickOverviewSidebar
+          player={player}
+          resources={resources}
+          discoveredResources={discoveredResources}
+        />
       </main>
+      </>}
+
+      {pendingBattle && !gameState.combat && <BattleConfirmModal
+        action={pendingBattle}
+        onConfirm={handleConfirmBattle}
+        onCancel={() => setPendingBattleId(null)}
+      />}
 
       {activeModal && (
         <SaveSlotModal

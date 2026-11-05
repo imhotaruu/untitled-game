@@ -9,6 +9,7 @@ export const actions = [
   {
     id: "continue_story_village_square",
     label: "Continue Story",
+    category: "story",
     area: "village_square",
     log: "You continue the story.",
     story: "You take your first true step beyond the quiet safety of the village.",
@@ -70,6 +71,15 @@ export const actions = [
           "Garron notices your stance becoming steadier. You have learned the basics of guarding.",
       },
     ],
+  },
+
+  {
+    id: "spar_with_garron",
+    label: "Spar with Garron",
+    area: "stonefield_house",
+    unlocked: false,
+    encounterId: "garron_spar",
+    description: "Test your combat skills against Garron. Uses your equipment and separate, full sparring health and stamina. No lasting injuries, item costs, or rewards. You can end the spar at any time.",
   },
 
   {

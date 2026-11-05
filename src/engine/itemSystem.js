@@ -329,6 +329,7 @@ export function grantItemRewards(state, itemRewards = []) {
 }
 
 export function consumeInventoryItem(currentState, itemId) {
+  if (currentState.combat) return currentState;
   const nextState = clone(currentState);
   const item = getItemById(itemId);
 

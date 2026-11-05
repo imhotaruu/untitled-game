@@ -76,6 +76,7 @@ function clearExistingEquipmentInstance(state, itemId) {
 }
 
 export function equipItem(currentState, itemId, preferredSlotId = null) {
+  if (currentState.combat) return currentState;
   const nextState = clone(currentState);
   const item = getItemById(itemId);
 
@@ -142,6 +143,7 @@ export function equipItem(currentState, itemId, preferredSlotId = null) {
 }
 
 export function unequipSlot(currentState, slotId) {
+  if (currentState.combat) return currentState;
   const nextState = clone(currentState);
 
   ensureEquipment(nextState);

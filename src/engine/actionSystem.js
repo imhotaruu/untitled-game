@@ -15,6 +15,7 @@ import { recordActionProgress } from "./progressSystem";
 import { processUnlocks } from "./unlockSystem";
 import { grantItemRewards } from "./itemSystem";
 import { getActionUnavailableReason } from "./selectors";
+import { startCombat } from "./combatSystem";
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -359,7 +360,8 @@ function applyProgressMilestones(state, action) {
   return messages;
 }
 
-export function performAction(currentState, action) {
+export function performAction(currentState, action, options = {}) {
+  if (currentState.combat) return currentState;
   const nextState = clone(currentState);
 
   ensureProgressGroup(nextState);
@@ -370,6 +372,10 @@ export function performAction(currentState, action) {
   if (unavailableReason) {
     nextState.actionLog = addLog(nextState.actionLog, createLogEntry("warning", unavailableReason));
     return nextState;
+  }
+
+  if (action.encounterId) {
+    return startCombat(currentState, action.encounterId, options.seed);
   }
 
   if (action.startsResting) {

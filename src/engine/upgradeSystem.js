@@ -94,6 +94,7 @@ function getMissingResourceMessage(resources, cost = {}) {
 }
 
 export function purchaseUpgrade(currentState, upgrade) {
+  if (currentState.combat) return currentState;
   const nextState = clone(currentState);
 
   ensureUpgradeState(nextState);

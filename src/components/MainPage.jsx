@@ -7,6 +7,7 @@ import Panel from "./ui/Panel";
 export default function MainPage({
   player, resources, actionLog, storyLog, currentArea, currentAreaLabel,
   discoveredAreaGroups, availableActions, onMoveToArea, onAction,
+  focusActionId,
 }) {
   const [historyRevision, setHistoryRevision] = useState(0);
   const sceneId = useId();
@@ -50,6 +51,7 @@ export default function MainPage({
 
       <div className="scene-content-split">
         <ActionButtons key={player.area} actions={availableActions} resources={resources}
+          focusActionId={focusActionId}
           player={player} onAction={(action) => {
             showActionHistory();
             onAction(action);
@@ -63,7 +65,7 @@ export default function MainPage({
   </>;
 }
 
-function ActionButtons({ actions, resources, player, onAction }) {
+function ActionButtons({ actions, resources, player, onAction, focusActionId }) {
   const [previewId, setPreviewId] = useState(null);
   const detailsId = useId();
   const preview = actions.find((action) => action.id === previewId);
@@ -76,7 +78,9 @@ function ActionButtons({ actions, resources, player, onAction }) {
           const isResting = Boolean(action.startsResting && player.isResting);
           return (
             <button key={action.id} type="button"
-              className={isResting ? "main-action-button primary" : "main-action-button"}
+              autoFocus={action.id === focusActionId}
+              className={isResting ? "action-button main-action-button primary" : "action-button main-action-button"}
+              data-action-kind={action.encounterId ? "battle" : action.startsResting ? "rest" : action.category || "normal"}
               data-previewed={preview?.id === action.id} disabled={isResting}
               aria-controls={detailsId}
               aria-describedby={preview?.id === action.id ? detailsId : undefined}

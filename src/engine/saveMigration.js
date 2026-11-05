@@ -1,7 +1,8 @@
 import { createGameState } from "./createGameState";
 import { processUnlocks } from "./unlockSystem";
+import { normalizeCombat } from "./combatSystem";
 
-export const CURRENT_SAVE_VERSION = 8;
+export const CURRENT_SAVE_VERSION = 9;
 
 function isPlainObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -81,6 +82,8 @@ export function migrateSaveState(savedState) {
   const migratedState = mergeWithDefaults(defaultState, savedState);
 
   migratedState.player = normalizePlayer(migratedState.player);
+  migratedState.combat = normalizeCombat(migratedState.combat, migratedState.player.area);
+  if (migratedState.combat) migratedState.player.isResting = false;
 
   // New rewards become claimable in eligible older saves; no items are granted on load.
   processUnlocks(migratedState);

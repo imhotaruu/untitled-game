@@ -146,7 +146,8 @@ export default function CharacterPage({
           </div>
           <p className="character-help character-card-wide">
             Totals include attributes, training, unlocks, and gear, subject to stat caps.
-            These stats do not affect battle yet.
+            Attack, Defense, Guard Power, Accuracy, Evasion, and Critical Chance now affect sparring.
+            Initiative, Focus, and Resolve are reserved for future combat abilities.
           </p>
         </>}
 
