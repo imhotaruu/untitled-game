@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 
 // Presentation only: compare real vitals, never infer a hit from narrated text.
-export default function useHitReaction(hp, cue = null) {
+export default function useHitReaction(hp, cue = null, reducedMotion = false) {
   const elementRef = useRef(null);
   const previousHp = useRef(hp);
   const cueId = cue?.id;
@@ -11,7 +11,7 @@ export default function useHitReaction(hp, cue = null) {
     const damaged = hp < previousHp.current;
     previousHp.current = hp;
     const usingMove = cueKind === "use";
-    if ((!damaged && !usingMove) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if ((!damaged && !usingMove) || reducedMotion) return;
     const attack = ["attack", "heavy_strike", "enemy_attack"].includes(cueAction);
     const animation = elementRef.current?.animate(damaged ? [
       { transform: "translateX(0)", filter: "brightness(1)" },
@@ -29,6 +29,6 @@ export default function useHitReaction(hp, cue = null) {
       { filter: "brightness(1)" },
     ], { duration: damaged ? 260 : 360, easing: "ease-out" });
     return () => animation?.cancel();
-  }, [hp, cueId, cueKind, cueAction]);
+  }, [hp, cueId, cueKind, cueAction, reducedMotion]);
   return elementRef;
 }

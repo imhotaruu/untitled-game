@@ -41,6 +41,9 @@ function Topbar({
         </div>
 
         <div className="top-actions">
+          <button type="button" aria-haspopup="dialog" onClick={() => onOpenModal("settings")}>
+            Settings
+          </button>
           <button type="button" onClick={() => onOpenModal("save")}>
             Save
           </button>

@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef } from "react";
 
-export default function CombatOverlay({ title, onClose, children }) {
+export default function CombatOverlay({ title, onClose, children, className = "" }) {
   const dialogRef = useRef(null);
   const titleId = useId();
   useEffect(() => {
@@ -14,7 +14,7 @@ export default function CombatOverlay({ title, onClose, children }) {
     onClose();
   }
 
-  return <dialog ref={dialogRef} className="battle-overlay" aria-labelledby={titleId}
+  return <dialog ref={dialogRef} className={`battle-overlay ${className}`} aria-labelledby={titleId}
     onCancel={(event) => { event.preventDefault(); close(); }}>
     <header className="battle-overlay-header">
       <h2 id={titleId}>{title}</h2>

@@ -9,14 +9,14 @@ import StatMeter from "./ui/StatMeter";
 
 const outcomeLabels = { victory: "Spar won", defeat: "Spar lost", retreat: "Spar ended" };
 
-export default function CombatPanel({ combat, onMove, onDismiss, magicUnlocked, inventory, busy = false, frame = null }) {
+export default function CombatPanel({ combat, onMove, onDismiss, magicUnlocked, inventory, busy = false, frame = null, reducedMotion = false }) {
   const [preview, setPreview] = useState({ label: "Commands", description: "Choose a category or a defensive move." });
   const [overlay, setOverlay] = useState(null);
   const [awayFromLatest, setAwayFromLatest] = useState(false);
   const headingRef = useRef(null);
   const logRef = useRef(null);
   const detailsId = useId();
-  const enemyRef = useHitReaction(combat.enemy.hp, frame?.actor === "enemy" ? frame : null);
+  const enemyRef = useHitReaction(combat.enemy.hp, frame?.actor === "enemy" ? frame : null, reducedMotion);
   const active = combat.status === "active";
   const intent = getCombatIntent(combat);
   const latest = combat.log[0] || { round: 0, messages: ["Choose a command when you are ready."] };
@@ -91,7 +91,7 @@ export default function CombatPanel({ combat, onMove, onDismiss, magicUnlocked, 
       </section>
 
       <BattlePartyStrip members={[{ ...combat.player, id: "player" }]} activeMemberId={active && frame?.actor !== "enemy" ? "player" : null}
-        busy={busy} frame={frame} finished={!active} onDetails={() => openOverlay("details")} />
+        busy={busy} frame={frame} reducedMotion={reducedMotion} finished={!active} onDetails={() => openOverlay("details")} />
 
       <aside className="battle-command-guide" aria-label={active ? "Command description" : "Practice results"}>
         {busy ? <div id={detailsId}><h3>Turn in progress</h3><p>Watch the exchange. Commands return when the turn finishes.</p></div> : active ? <div id={detailsId}>

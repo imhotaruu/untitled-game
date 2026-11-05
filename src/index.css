@@ -1110,10 +1110,60 @@ button.primary {
   to { opacity: 1; transform: translateY(0); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .combat-screen,
-  .battle-message { animation: none; }
-  .battle-command { transition: none; }
+.app[data-reduced-motion="true"] .combat-screen,
+.app[data-reduced-motion="true"] .combat-screen * {
+  animation: none;
+  transition: none;
+}
+
+.app[data-reduced-motion="true"] .battle-command:hover:not(:disabled),
+.app[data-reduced-motion="true"] .combat-screen button:active {
+  transform: none;
+}
+
+.settings-modal {
+  width: min(460px, calc(100vw - 32px));
+}
+
+.settings-fields {
+  display: grid;
+  gap: 24px;
+}
+
+.settings-field label {
+  display: block;
+  font-weight: 700;
+}
+
+.settings-field p,
+.settings-footer p {
+  margin: 6px 0 12px;
+  color: var(--text-sub);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.settings-field select {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  font: inherit;
+  color: inherit;
+  background: #141414;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color-scheme: dark;
+}
+
+.settings-field select:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
+
+.settings-footer {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
 }
 
 .history-panel {

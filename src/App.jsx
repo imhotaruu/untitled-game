@@ -36,8 +36,20 @@ import QuickOverviewSidebar from "./components/QuickOverviewSidebar";
 import SaveSlotModal from "./components/SaveSlotModal";
 import BattleConfirmModal from "./components/BattleConfirmModal";
 import CombatScreen from "./components/CombatScreen";
+import SettingsModal from "./components/SettingsModal";
+import { loadPreferences, normalizePreferences, savePreferences } from "./utils/preferences";
 
 function App() {
+  const [preferences, setPreferences] = useState(loadPreferences);
+  const [preferencesSaved, setPreferencesSaved] = useState(true);
+  const reducedMotion = preferences.motion === "reduced";
+
+  function handlePreferencesChange(next) {
+    const normalized = normalizePreferences(next);
+    setPreferences(normalized);
+    setPreferencesSaved(savePreferences(normalized));
+  }
+
   // UI feedback shares an atomic update with gameplay, but is never saved.
   const [session, setSession] = useState(() => ({
     gameState: loadLastUsedSave() || createGameState(),
@@ -113,7 +125,7 @@ function App() {
   function openModal(modalType) {
     setPendingBattleId(null);
     dismissItemFeedback();
-    refreshSaveSlots();
+    if (modalType !== "settings") refreshSaveSlots();
     setActiveModal(modalType);
   }
 
@@ -259,8 +271,10 @@ function App() {
   }
 
   return (
-    <div className={gameState.combat ? "app app-combat" : "app"}>
+    <div className={gameState.combat ? "app app-combat" : "app"} data-reduced-motion={reducedMotion}>
       {gameState.combat ? <CombatScreen
+        combatPace={preferences.combatPace}
+        reducedMotion={reducedMotion}
         magicUnlocked={Boolean(gameState.unlocks?.systems?.magic)}
         inventory={gameState.inventory}
         combat={gameState.combat}
@@ -332,7 +346,14 @@ function App() {
         onCancel={() => setPendingBattleId(null)}
       />}
 
-      {activeModal && (
+      {activeModal === "settings" && <SettingsModal
+        preferences={preferences}
+        saved={preferencesSaved}
+        onChange={handlePreferencesChange}
+        onClose={closeModal}
+      />}
+
+      {activeModal && activeModal !== "settings" && (
         <SaveSlotModal
           mode={activeModal}
           slots={saveSlots}

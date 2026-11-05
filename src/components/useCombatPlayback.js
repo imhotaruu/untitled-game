@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { resolveCombatTurn } from "../engine/combatSystem";
+import { getCombatFrameDuration } from "../utils/combatPacing";
 
-const durations = { use: 700, hit: 900, miss: 800, block: 800, restore: 750, turn: 650, wait: 850, result: 900 };
-
-export default function useCombatPlayback(combat, onMove) {
+export default function useCombatPlayback(combat, onMove, combatPace = "normal") {
   const [playback, setPlayback] = useState(null);
   const pendingRef = useRef(null);
   const busy = Boolean(playback && playback.source === combat);
@@ -23,7 +22,7 @@ export default function useCombatPlayback(combat, onMove) {
         setPlayback(null);
         onMove(playback.moveId);
       }
-    }, durations[frame.kind] || 800);
+    }, getCombatFrameDuration(frame.kind, playback.pace));
     return () => clearTimeout(timer);
   }, [playback, combat, frame, onMove]);
 
@@ -37,7 +36,8 @@ export default function useCombatPlayback(combat, onMove) {
     }
     const token = {};
     pendingRef.current = token;
-    setPlayback({ source: combat, moveId, frames: result.frames, index: 0, token });
+    // Keep one pace for the entire exchange, independent of future preferences.
+    setPlayback({ source: combat, moveId, frames: result.frames, index: 0, token, pace: combatPace });
   }
 
   return {

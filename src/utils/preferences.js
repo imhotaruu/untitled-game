@@ -1,0 +1,30 @@
+export const PREFERENCES_KEY = "new-untitled-game-preferences";
+export const DEFAULT_PREFERENCES = Object.freeze({ combatPace: "normal", motion: "full" });
+
+export function normalizePreferences(value) {
+  return {
+    combatPace: ["slow", "normal", "fast"].includes(value?.combatPace)
+      ? value.combatPace : DEFAULT_PREFERENCES.combatPace,
+    motion: ["reduced", "full"].includes(value?.motion)
+      ? value.motion : DEFAULT_PREFERENCES.motion,
+  };
+}
+
+export function loadPreferences() {
+  try {
+    return normalizePreferences(JSON.parse(localStorage.getItem(PREFERENCES_KEY)));
+  } catch {
+    return { ...DEFAULT_PREFERENCES };
+  }
+}
+
+// A storage failure must not prevent changing preferences for this session.
+export function savePreferences(preferences) {
+  try {
+    localStorage.setItem(PREFERENCES_KEY, JSON.stringify(normalizePreferences(preferences)));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
