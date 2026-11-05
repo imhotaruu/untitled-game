@@ -12,6 +12,9 @@ import { moveToArea } from "./engine/areaSystem";
 import { equipItem, unequipSlot } from "./engine/equipmentSystem";
 import { consumeInventoryItem } from "./engine/itemSystem";
 import { createItemFeedback } from "./utils/itemFeedback";
+import { createUpgradeFeedback } from "./utils/upgradeFeedback";
+import { createGatheringFeedback } from "./utils/gatheringFeedback";
+import { getGatheringResourceIds, hasGatheringMastery } from "./engine/gatheringSystem";
 import {
   getAvailableActions,
   getAreaById,
@@ -37,6 +40,7 @@ import SaveSlotModal from "./components/SaveSlotModal";
 import BattleConfirmModal from "./components/BattleConfirmModal";
 import CombatScreen from "./components/CombatScreen";
 import SettingsModal from "./components/SettingsModal";
+import ItemFeedbackPopup from "./components/ItemFeedbackPopup";
 import { loadPreferences, normalizePreferences, savePreferences } from "./utils/preferences";
 
 function App() {
@@ -134,7 +138,16 @@ function App() {
   }
 
   function handlePurchaseUpgrade(upgrade) {
-    setGameState((currentState) => purchaseUpgrade(currentState, upgrade));
+    setSession((current) => {
+      const before = current.gameState;
+      const after = purchaseUpgrade(before, upgrade);
+      const feedbackSequence = current.feedbackSequence + 1;
+      return {
+        gameState: after,
+        feedbackSequence,
+        itemFeedback: { ...createUpgradeFeedback(before, after, upgrade.id), id: feedbackSequence },
+      };
+    });
   }
 
   function handleEquipItem(itemId, preferredSlotId = null) {
@@ -178,16 +191,25 @@ function App() {
   }
 
   function handleMoveToArea(area) {
+    dismissItemFeedback();
     setFocusActionId(null);
     setGameState((currentState) => moveToArea(currentState, area));
   }
 
   function handleAction(action) {
     if (action.encounterId) {
+      dismissItemFeedback();
       setPendingBattleId(action.id);
       return;
     }
-    setGameState((currentState) => performAction(currentState, action));
+    const criticalRolls = Object.fromEntries(getGatheringResourceIds(action).map((id) => [id, Math.random()]));
+    setSession((current) => {
+      const after = performAction(current.gameState, action, { criticalRolls });
+      const feedback = createGatheringFeedback(current.gameState, after, action);
+      if (!feedback) return { ...current, gameState: after };
+      const feedbackSequence = current.feedbackSequence + 1;
+      return { gameState: after, feedbackSequence, itemFeedback: { ...feedback, id: feedbackSequence } };
+    });
   }
 
   function handleConfirmBattle() {
@@ -229,6 +251,7 @@ function App() {
     }
 
     setGameState(addSystemLog(savedState, `Loaded Slot ${slotId}.`));
+    if (characterTab === "mastery" && !hasGatheringMastery(savedState)) setCharacterTab("overview");
     setFocusActionId(null);
     setPendingBattleId(null);
     if (savedState.combat) setActivePage("main");
@@ -301,6 +324,7 @@ function App() {
         {activePage === "main" ? (
           <>
             <MainPage
+              gatheringMastery={gameState.gatheringMastery}
               focusActionId={focusActionId}
               player={player}
               resources={resources}
@@ -317,8 +341,6 @@ function App() {
           </>
         ) : (
           <CharacterPage
-            itemFeedback={itemFeedback}
-            onDismissItemFeedback={dismissItemFeedback}
             player={player}
             resources={resources}
             gameState={gameState}
@@ -339,6 +361,8 @@ function App() {
         />
       </main>
       </>}
+
+      <ItemFeedbackPopup feedback={itemFeedback} onDismiss={dismissItemFeedback} />
 
       {pendingBattle && !gameState.combat && <BattleConfirmModal
         action={pendingBattle}

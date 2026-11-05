@@ -3,13 +3,13 @@ import { equipmentSlots } from "./equipmentSlots";
 export const items = [
   {
     id: "training_stick",
-    label: "Training Stick",
+    label: "Training Sword",
     type: "equipment",
     slot: "weapon",
     rarity: "common",
     category: "Training Gear",
     description:
-      "A simple wooden stick. It is not much of a weapon, but it is familiar and easy to hold.",
+      "A wooden practice sword with a rounded edge and a worn grip. Garron has checked it for splinters more than once.",
     equipmentBonuses: {
       attackPower: 1,
       guardPower: 1,

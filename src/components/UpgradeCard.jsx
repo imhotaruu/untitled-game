@@ -1,7 +1,7 @@
 import { useId } from "react";
-import { canPayResourceCost } from "../engine/resourceSystem";
-import { getNextUpgradeCost, getUpgradeLevel, isUpgradeMaxed } from "../engine/upgradeSystem";
-import { formatRegenValue } from "../utils/formatters";
+import { getNextUpgradeCost, getUpgradeLevel, isUpgradeMaxed, getUpgradePreview, getUpgradeBlockReason } from "../engine/upgradeSystem";
+import { formatRegenValue, formatDerivedCombatStatLabel } from "../utils/formatters";
+import { formatDerivedCombatStatValue } from "../engine/derivedStats";
 import InfoRow from "./ui/InfoRow";
 
 const previewStats = {
@@ -14,27 +14,30 @@ export default function UpgradeCard({ upgrade, gameState, onPurchaseUpgrade }) {
   const level = getUpgradeLevel(gameState, upgrade.id);
   const maxed = isUpgradeMaxed(gameState, upgrade);
   const cost = getNextUpgradeCost(gameState, upgrade);
-  const affordable = cost !== null && canPayResourceCost(gameState.resources, cost);
-  const status = maxed ? "Maximum level reached" : !cost ? "Upgrade unavailable"
-    : affordable ? "Ready to upgrade" : "Not enough resources";
+  const blocked = getUpgradeBlockReason(gameState, upgrade);
+  const locked = upgrade.requiredSystem && !gameState.unlocks?.systems?.[upgrade.requiredSystem];
+  const preview = getUpgradePreview(gameState, upgrade);
+  const capped = !maxed && upgrade.combatBonuses && preview.every((row) => row.next <= row.current);
 
   return (
     <article className="upgrade-card">
       <div className="upgrade-card-header">
-        <strong>{upgrade.label}</strong>
+        <h4>{upgrade.label}</h4>
         <span>Level {level} / {upgrade.maxLevel}</span>
       </div>
       <div className="upgrade-copy">
         <p>{upgrade.description}</p>
+        <p className="upgrade-usage">{upgrade.usage}</p>
         {upgrade.flavorText && <p className="upgrade-flavor">{upgrade.flavorText}</p>}
       </div>
       <div className="upgrade-preview">
-        {upgrade.effects.filter((effect) => previewStats[effect.stat]).map((effect) => {
-          const current = gameState.player[effect.stat];
-          const unit = effect.stat.endsWith("Regen") ? "/s" : "";
-          return <InfoRow key={effect.stat} label={previewStats[effect.stat]}
-            value={maxed ? `${formatRegenValue(current)}${unit}`
-              : `${formatRegenValue(current)}${unit} → ${formatRegenValue(current + effect.amount)}${unit}`} />;
+        <span className="upgrade-cost-label">{maxed ? "Current total" : "Current → next rank"}</span>
+        {preview.map(({ stat, current, next }) => {
+          const format = (value) => previewStats[stat]
+            ? `${formatRegenValue(value)}${stat.endsWith("Regen") ? "/s" : ""}`
+            : formatDerivedCombatStatValue(stat, value);
+          return <InfoRow key={stat} label={previewStats[stat] || formatDerivedCombatStatLabel(stat)}
+            value={maxed ? format(current) : `${format(current)} → ${format(next)}`} />;
         })}
       </div>
       <div className="upgrade-costs" id={costId}>
@@ -49,11 +52,11 @@ export default function UpgradeCard({ upgrade, gameState, onPurchaseUpgrade }) {
             </div>;
           })}
         </> : <p>Free</p>)}
-        <p className="upgrade-status">{status}</p>
+        <p className="upgrade-status">{blocked || "Ready to upgrade"}</p>
       </div>
-      <button type="button" disabled={maxed || !affordable} aria-describedby={costId}
+      <button type="button" disabled={Boolean(blocked)} aria-describedby={costId}
         aria-label={`Upgrade ${upgrade.label}`} onClick={() => onPurchaseUpgrade(upgrade)}>
-        {maxed ? "Max level" : "Upgrade"}
+        {maxed ? "Max level" : locked ? "Locked" : capped ? "At stat cap" : "Upgrade"}
       </button>
     </article>
   );

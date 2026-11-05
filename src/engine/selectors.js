@@ -1,3 +1,12 @@
+import { milestones } from "../data/milestones";
+
+export function getCompletedMilestones(state) {
+  return milestones.filter((milestone) =>
+    (milestone.completedStoryEventId && state.completedStoryEvents?.includes(milestone.completedStoryEventId))
+    || (milestone.completedRuleId && state.unlocks?.completedRules?.includes(milestone.completedRuleId))
+  );
+}
+
 export function getDiscoveredResources(resources) {
   return Object.entries(resources).filter(
     ([resourceId, resource]) => resourceId !== "gold" && resource.discovered

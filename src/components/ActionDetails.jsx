@@ -1,7 +1,9 @@
 import { items } from "../data/items";
 import { formatStatLabel } from "../utils/formatters";
+import { getActionResourceRewards, getGatheringBonus, getGatheringResourceIds, getGatheringProgress } from "../engine/gatheringSystem";
+import { gatheringMasteries } from "../data/gatheringMasteries";
 
-function ActionDetails({ action, resources, id }) {
+function ActionDetails({ action, resources, id, gatheringMastery }) {
   if (!action) {
     return (
       <div className="action-details" id={id}>
@@ -11,7 +13,8 @@ function ActionDetails({ action, resources, id }) {
   }
 
   const { statCost, resourceCost } = getActionCostDetails(action);
-  const rewards = action.rewards || {};
+  const rewards = getActionResourceRewards({ gatheringMastery }, action);
+  const gatheringIds = getGatheringResourceIds(action);
   const restore = action.restore || {};
   const itemRewards = action.itemRewards || [];
   const progressRewards = action.progressRewards || {};
@@ -60,11 +63,18 @@ function ActionDetails({ action, resources, id }) {
           {Object.entries(rewards)
             .map(([resourceId, amount]) => {
               const label = resources[resourceId]?.label || resourceId;
-              return `+${amount} ${label}`;
+              const bonus = gatheringIds.includes(resourceId) ? getGatheringBonus({ gatheringMastery }, resourceId) : 0;
+              return `+${amount} ${label}${bonus ? ` (includes +${bonus} mastery)` : ""}`;
             })
             .join(", ")}
         </p>
       )}
+
+      {gatheringIds.map((resourceId) => {
+        const mastery = gatheringMasteries.find((entry) => entry.resourceId === resourceId);
+        const { maxed } = getGatheringProgress({ gatheringMastery }, resourceId);
+        return <p key={resourceId}>{mastery.label}: {maxed ? "Max level" : `+${mastery.xpPerGather} XP`} · {mastery.criticalChance * 100}% chance for ×{mastery.criticalMultiplier} yield.</p>;
+      })}
 
       {hasItemRewards && (
         <p>

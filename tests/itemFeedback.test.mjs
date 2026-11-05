@@ -74,7 +74,7 @@ test("repeated uses remove the last poultice, then report the missing item", () 
   ]);
 });
 
-test("Training Stick equip and unequip report signed combat stat changes", () => {
+test("Training Sword equip and unequip report signed combat stat changes", () => {
   const before = fullState();
   before.inventory.items.push({ itemId: "training_stick", quantity: 1 });
   const equipped = equipItem(before, "training_stick");
@@ -87,7 +87,7 @@ test("Training Stick equip and unequip report signed combat stat changes", () =>
   }).messages, ["−1 Attack Power", "−1 Guard Power"]);
   assert.deepEqual(removed.inventory, before.inventory);
   assert.deepEqual(removed.storyLog, before.storyLog);
-  assert.equal(removed.actionLog[0].message, "Unequipped: Training Stick.");
+  assert.equal(removed.actionLog[0].message, "Unequipped: Training Sword.");
 });
 
 test("Charm removal and re-equipping preserve the item and report its bonuses", () => {

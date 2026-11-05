@@ -1432,6 +1432,46 @@ button.primary {
   gap: 16px;
 }
 
+.upgrade-group {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.upgrade-group > header,
+.gathering-masteries > header {
+  margin-bottom: 16px;
+}
+
+.mastery-card {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+}
+
+.mastery-xp progress {
+  display: block;
+  width: 100%;
+  height: 8px;
+  margin-top: 8px;
+  border: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--line);
+  accent-color: var(--gold);
+}
+
+.mastery-xp progress::-webkit-progress-bar { background: var(--line); }
+.mastery-xp progress::-webkit-progress-value { background: var(--gold); }
+.mastery-xp progress::-moz-progress-bar { background: var(--gold); }
+
+.upgrade-card .upgrade-usage {
+  font-size: 0.8rem;
+}
+
 .upgrade-card {
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-sm);
@@ -1450,7 +1490,8 @@ button.primary {
   flex-wrap: wrap;
 }
 
-.upgrade-card-header strong {
+.upgrade-card-header h4 {
+  margin: 0;
   color: var(--text);
   font-size: 0.95rem;
 }

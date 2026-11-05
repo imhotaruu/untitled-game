@@ -16,6 +16,7 @@ import { processUnlocks } from "./unlockSystem";
 import { grantItemRewards } from "./itemSystem";
 import { getActionUnavailableReason } from "./selectors";
 import { startCombat } from "./combatSystem";
+import { resolveGatheringHarvest, getGatheringResourceIds, advanceGatheringMastery } from "./gatheringSystem";
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -444,7 +445,12 @@ export function performAction(currentState, action, options = {}) {
   payResourceCost(nextState.resources, resourceCost);
 
   restoreStats(nextState.player, action.restore);
-  addResources(nextState.resources, action.rewards);
+  // Current mastery determines this payout; a new level benefits the next gather.
+  const { rewards: resourceRewards, criticalResources } = resolveGatheringHarvest(nextState, action, options.criticalRolls);
+  addResources(nextState.resources, resourceRewards);
+  const gatheringMessages = getGatheringResourceIds(action).map((id) =>
+    createLogEntry("resource", `${criticalResources.includes(id) ? "Critical gather! " : ""}Gathered ${resourceRewards[id]} ${nextState.resources[id]?.label || id}${criticalResources.includes(id) ? " (×2 yield)" : ""}.`));
+  const masteryMessages = advanceGatheringMastery(nextState, action);
 
   const itemRewardMessages = grantItemRewards(nextState, action.itemRewards);
   const progressRewardMessages = applyProgressRewards(nextState, action);
@@ -461,6 +467,8 @@ export function performAction(currentState, action, options = {}) {
 
   const actionLogEntries = [
     getActionLog(action, action.log),
+    ...gatheringMessages,
+    ...masteryMessages,
     ...itemRewardMessages,
     ...progressRewardMessages,
     ...completionUnlockMessages,

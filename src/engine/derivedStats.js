@@ -1,4 +1,5 @@
 import { items } from "../data/items";
+import { getUpgradeBonusTotals } from "./upgradeBonuses";
 
 function getAttribute(attributes, attributeId) {
   const value = Number(attributes?.[attributeId]);
@@ -47,6 +48,7 @@ export function getDerivedCombatStats(player, gameState) {
   const combatTraining = gameState.progress?.combatTraining ?? 0;
   const hasBasicGuard = Boolean(gameState.unlocks?.systems?.basic_guard);
   const equipmentBonuses = getEquipmentBonusTotals(gameState);
+  const upgradeBonuses = getUpgradeBonusTotals(gameState);
 
   const strength = getAttribute(attributes, "strength");
   const dexterity = getAttribute(attributes, "dexterity");
@@ -61,6 +63,7 @@ export function getDerivedCombatStats(player, gameState) {
       1 +
       strength * 2 +
       Math.floor(combatTraining / 2) +
+      (upgradeBonuses.attackPower || 0) +
       (equipmentBonuses.attackPower || 0),
 
     defense:
@@ -74,12 +77,14 @@ export function getDerivedCombatStats(player, gameState) {
       constitution +
       Math.floor(strength / 2) +
       (hasBasicGuard ? 2 : 0) +
+      (upgradeBonuses.guardPower || 0) +
       (equipmentBonuses.guardPower || 0),
 
     accuracy: clamp(
       70 +
         dexterity * 3 +
         Math.floor(combatTraining / 2) +
+        (upgradeBonuses.accuracy || 0) +
         (equipmentBonuses.accuracy || 0),
       0,
       95

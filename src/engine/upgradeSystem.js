@@ -1,4 +1,8 @@
 import { storyEvents } from "../data/storyEvents";
+import { upgrades } from "../data/upgrades";
+import { getDerivedCombatStats } from "./derivedStats";
+import { getUpgradeLevel } from "./upgradeBonuses";
+export { getUpgradeLevel } from "./upgradeBonuses";
 import {
   canPayResourceCost,
   payResourceCost,
@@ -26,10 +30,6 @@ function ensureUpgradeState(state) {
   }
 }
 
-export function getUpgradeLevel(state, upgradeId) {
-  return state.upgrades?.levels?.[upgradeId] || 0;
-}
-
 export function isUpgradeMaxed(state, upgrade) {
   return getUpgradeLevel(state, upgrade.id) >= upgrade.maxLevel;
 }
@@ -38,6 +38,40 @@ export function getNextUpgradeCost(state, upgrade) {
   const currentLevel = getUpgradeLevel(state, upgrade.id);
 
   return upgrade.costs[currentLevel] || null;
+}
+
+export function getUpgradePreview(state, upgrade) {
+  const maxed = isUpgradeMaxed(state, upgrade);
+  const rows = (upgrade.effects || [])
+    .filter(({ stat }) => stat.startsWith("max") || stat.endsWith("Regen"))
+    .map(({ stat, amount }) => ({ stat, current: state.player[stat], next: state.player[stat] + (maxed ? 0 : amount) }));
+  if (upgrade.combatBonuses) {
+    const current = getDerivedCombatStats(state.player, state);
+    const nextState = { ...state, upgrades: { ...state.upgrades, levels: {
+      ...state.upgrades?.levels,
+      [upgrade.id]: getUpgradeLevel(state, upgrade.id) + (maxed ? 0 : 1),
+    } } };
+    const next = getDerivedCombatStats(state.player, nextState);
+    for (const stat of Object.keys(upgrade.combatBonuses)) {
+      rows.push({ stat, current: current[stat], next: next[stat] });
+    }
+  }
+  return rows;
+}
+
+export function getUpgradeBlockReason(state, upgrade) {
+  if (state.combat) return "Finish the battle before upgrading.";
+  if (isUpgradeMaxed(state, upgrade)) return "Maximum level reached.";
+  if (upgrade.requiredSystem && !state.unlocks?.systems?.[upgrade.requiredSystem]) {
+    return upgrade.requirementText;
+  }
+  if (upgrade.combatBonuses && getUpgradePreview(state, upgrade).every((row) => row.next <= row.current)) {
+    return "At the current stat cap. This rank would not improve your stats.";
+  }
+  const cost = getNextUpgradeCost(state, upgrade);
+  if (!cost) return "Upgrade unavailable.";
+  if (!canPayResourceCost(state.resources, cost)) return getMissingResourceMessage(state.resources, cost);
+  return null;
 }
 
 function applyUpgradeEffects(player, effects = []) {
@@ -93,43 +127,23 @@ function getMissingResourceMessage(resources, cost = {}) {
   return `Not enough ${otherResources} and ${lastResource}.`;
 }
 
-export function purchaseUpgrade(currentState, upgrade) {
+export function purchaseUpgrade(currentState, requestedUpgrade) {
   if (currentState.combat) return currentState;
+  // Resolve the definition here so callers cannot bypass costs or requirements.
+  const upgrade = upgrades.find((entry) => entry.id === requestedUpgrade?.id);
+  if (!upgrade) return currentState;
   const nextState = clone(currentState);
 
   ensureUpgradeState(nextState);
 
   const currentLevel = getUpgradeLevel(nextState, upgrade.id);
-
-  if (currentLevel >= upgrade.maxLevel) {
-    nextState.actionLog = addLog(
-      nextState.actionLog,
-      `${upgrade.label} is already at max level.`
-    );
-
+  const blocked = getUpgradeBlockReason(nextState, upgrade);
+  if (blocked) {
+    nextState.actionLog = addLog(nextState.actionLog, blocked);
     return nextState;
   }
 
   const cost = getNextUpgradeCost(nextState, upgrade);
-
-  if (!cost) {
-    nextState.actionLog = addLog(
-      nextState.actionLog,
-      `${upgrade.label} has no available upgrade cost.`
-    );
-
-    return nextState;
-  }
-
-  if (!canPayResourceCost(nextState.resources, cost)) {
-    nextState.actionLog = addLog(
-      nextState.actionLog,
-      getMissingResourceMessage(nextState.resources, cost)
-    );
-
-    return nextState;
-  }
-
   payResourceCost(nextState.resources, cost);
   applyUpgradeEffects(nextState.player, upgrade.effects);
 
@@ -137,7 +151,7 @@ export function purchaseUpgrade(currentState, upgrade) {
 
   nextState.actionLog = addLog(
     nextState.actionLog,
-    `Upgrade purchased: ${upgrade.label} Lv. ${currentLevel + 1}.`
+    `Upgrade purchased: ${upgrade.label} Lv. ${currentLevel + 1}. Spent: ${formatResourceCost(cost, nextState.resources)}.`
   );
 
   processStoryEvents(nextState, storyEvents);

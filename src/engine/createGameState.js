@@ -3,6 +3,7 @@ import { areas } from "../data/areas";
 import { defaultPlayer } from "../data/defaultPlayer";
 import { defaultResources } from "../data/defaultResources";
 import { starterEquipment, starterInventory } from "../data/items";
+import { normalizeGatheringMastery } from "./gatheringSystem";
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -26,6 +27,7 @@ export function createGameState() {
     inventory: clone(starterInventory),
     equipment: clone(starterEquipment),
     combat: null,
+    gatheringMastery: normalizeGatheringMastery(null),
 
     actionLog: ["Prototype initialized."],
     storyLog: ["Story shell loaded."],

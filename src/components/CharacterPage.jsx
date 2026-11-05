@@ -2,10 +2,12 @@ import { useId, useState } from "react";
 import { items } from "../data/items";
 import { equipmentSlots } from "../data/equipmentSlots";
 import { formatDerivedCombatStatValue, getDerivedCombatStats, getEquipmentBonusTotals } from "../engine/derivedStats";
+import { getUpgradeBonusTotals } from "../engine/upgradeBonuses";
+import { hasGatheringMastery } from "../engine/gatheringSystem";
 import { formatAttributeLabel, formatDerivedCombatStatLabel, formatRegenValue, formatStatValue } from "../utils/formatters";
 import InfoRow from "./ui/InfoRow";
 import EquipmentBonusText from "./ui/EquipmentBonusText";
-import ItemFeedbackPopup from "./ItemFeedbackPopup";
+import GatheringMasteries from "./GatheringMasteries";
 import ArmorSlotPreview from "./ArmorSlotPreview";
 import InventoryPanel from "./InventoryPanel";
 import UpgradeCard from "./UpgradeCard";
@@ -20,7 +22,12 @@ const combatStatGroups = [
 ];
 const characterTabs = [
   { id: "overview", label: "Overview" }, { id: "combat", label: "Combat" },
-  { id: "upgrades", label: "Upgrades" }, { id: "items", label: "Items" },
+  { id: "upgrades", label: "Upgrades" }, { id: "mastery", label: "Mastery" },
+  { id: "items", label: "Items" },
+];
+const upgradeGroups = [
+  { id: "conditioning", label: "Conditioning", description: "Build your reserves and recover between outings." },
+  { id: "techniques", label: "Combat techniques", description: "Develop stronger strikes, steadier aim, or a firmer guard." },
 ];
 
 function TabBar({ tabs, active, onChange, id, label, className }) {
@@ -47,18 +54,21 @@ function TabBar({ tabs, active, onChange, id, label, className }) {
 }
 
 export default function CharacterPage({
-  itemFeedback, onDismissItemFeedback, player, resources, gameState, currentAreaLabel,
+  player, resources, gameState, currentAreaLabel,
   upgrades, activeTab, onChangeTab, onPurchaseUpgrade, onEquipItem, onUnequipSlot, onUseItem,
 }) {
   const [inventoryTab, setInventoryTab] = useState("equipment");
   const characterTabsId = useId();
   const inventoryTabsId = useId();
+  const visibleTabs = characterTabs.filter((tab) => tab.id !== "mastery" || hasGatheringMastery(gameState));
+  const selectedTab = visibleTabs.some((tab) => tab.id === activeTab) ? activeTab : "overview";
   const equipment = gameState.equipment || {};
   const combatTraining = gameState.progress?.combatTraining ?? 0;
   const combatBasicsUnlocked = Boolean(gameState.unlocks?.systems?.combat_basics);
   const basicGuardUnlocked = Boolean(gameState.unlocks?.systems?.basic_guard);
   const derivedCombatStats = getDerivedCombatStats(player, gameState);
   const equipmentBonusTotals = getEquipmentBonusTotals(gameState);
+  const upgradeBonusTotals = getUpgradeBonusTotals(gameState);
   const discoveredResources = Object.entries(resources).filter(([id, resource]) => id !== "gold" && resource.discovered);
   const resolvedItems = (gameState.inventory?.items || [])
     .filter((entry) => (entry.quantity ?? 1) > 0)
@@ -77,13 +87,12 @@ export default function CharacterPage({
 
   return (
     <section className="character-page-panel">
-      <ItemFeedbackPopup feedback={itemFeedback} onDismiss={onDismissItemFeedback} />
       <div className="panel-header"><h2>Character</h2></div>
-      <TabBar tabs={characterTabs} active={activeTab} onChange={onChangeTab}
+      <TabBar tabs={visibleTabs} active={selectedTab} onChange={onChangeTab}
         id={characterTabsId} label="Character sections" className="character-page-tabs" />
       <div className="character-page-content" role="tabpanel" id={`${characterTabsId}-panel`}
-        aria-labelledby={`${characterTabsId}-tab-${activeTab}`} tabIndex={0}>
-        {activeTab === "overview" && <>
+        aria-labelledby={`${characterTabsId}-tab-${selectedTab}`} tabIndex={0}>
+        {selectedTab === "overview" && <>
           <section className="character-card character-card-wide">
             <header className="character-summary-header">
               <h3>{player.name}</h3><span>Level {player.level}</span>
@@ -120,7 +129,7 @@ export default function CharacterPage({
           </section>
         </>}
 
-        {activeTab === "combat" && <>
+        {selectedTab === "combat" && <>
           <section className="character-card character-card-wide">
             <h3>Training</h3>
             <div className="combat-training-summary">
@@ -134,33 +143,43 @@ export default function CharacterPage({
               <h3>{group.label}</h3>
               {group.stats.map((statId) => {
                 const bonus = equipmentBonusTotals[statId] || 0;
+                const upgradeBonus = upgradeBonusTotals[statId] || 0;
                 return <div className="combat-stat" key={statId}>
                   <InfoRow label={formatDerivedCombatStatLabel(statId)}
                     value={formatDerivedCombatStatValue(statId, derivedCombatStats[statId])} />
                   {bonus !== 0 && <small className="combat-gear-bonus">
                     Gear: {bonus > 0 ? "+" : ""}{formatDerivedCombatStatValue(statId, bonus)}
                   </small>}
+                  {upgradeBonus !== 0 && <small className="combat-gear-bonus">
+                    Upgrades: +{formatDerivedCombatStatValue(statId, upgradeBonus)}
+                  </small>}
                 </div>;
               })}
             </section>)}
           </div>
           <p className="character-help character-card-wide">
-            Totals include attributes, training, unlocks, and gear, subject to stat caps.
+            Totals include attributes, training, unlocks, upgrades, and gear, subject to stat caps.
             Attack, Defense, Guard Power, Accuracy, Evasion, and Critical Chance now affect sparring.
             Initiative, Focus, and Resolve are reserved for future combat abilities.
           </p>
         </>}
 
-        {activeTab === "upgrades" && <section className="character-card character-card-wide">
+        {selectedTab === "upgrades" && <section className="character-card character-card-wide">
           <h3>Upgrades</h3>
-          <div className="upgrade-list">
-            {upgrades.map((upgrade) => <UpgradeCard key={upgrade.id} upgrade={upgrade}
-              gameState={gameState} onPurchaseUpgrade={onPurchaseUpgrade} />)}
-            {upgrades.length === 0 && <p className="empty-note">No upgrades available yet.</p>}
-          </div>
+          <p className="character-help">Spend gathered resources on permanent improvements. Choose what to develop first; every upgrade can eventually be learned.</p>
+          {upgradeGroups.map((group) => <section className="upgrade-group" key={group.id} aria-label={group.label}>
+            <header><h3>{group.label}</h3><p className="character-help">{group.description}</p></header>
+            <div className="upgrade-list">
+              {upgrades.filter((upgrade) => upgrade.category === group.id).map((upgrade) => <UpgradeCard key={upgrade.id} upgrade={upgrade}
+                gameState={gameState} onPurchaseUpgrade={onPurchaseUpgrade} />)}
+            </div>
+          </section>)}
+          {upgrades.length === 0 && <p className="empty-note">No upgrades available yet.</p>}
         </section>}
 
-        {activeTab === "items" && <div className="character-items-layout character-card-wide">
+        {selectedTab === "mastery" && <GatheringMasteries gameState={gameState} />}
+
+        {selectedTab === "items" && <div className="character-items-layout character-card-wide">
           <section className="character-card character-appearance" aria-label="Character and equipped gear">
             <header className="character-appearance-header">
               <div><h3>Character</h3><p className="character-appearance-name">{player.name}</p></div>

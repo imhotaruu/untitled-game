@@ -3,7 +3,7 @@ import { useEffect } from "react";
 export default function ItemFeedbackPopup({ feedback, onDismiss, position = "bottom-center" }) {
   useEffect(() => {
     if (!feedback) return;
-    const timeoutId = setTimeout(() => onDismiss(feedback), 4500);
+    const timeoutId = setTimeout(() => onDismiss(feedback), feedback.duration ?? 4500);
     return () => clearTimeout(timeoutId);
   }, [feedback, onDismiss]);
 

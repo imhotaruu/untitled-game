@@ -7,7 +7,7 @@ import Panel from "./ui/Panel";
 export default function MainPage({
   player, resources, actionLog, storyLog, currentArea, currentAreaLabel,
   discoveredAreaGroups, availableActions, onMoveToArea, onAction,
-  focusActionId,
+  focusActionId, gatheringMastery,
 }) {
   const [historyRevision, setHistoryRevision] = useState(0);
   const sceneId = useId();
@@ -51,6 +51,7 @@ export default function MainPage({
 
       <div className="scene-content-split">
         <ActionButtons key={player.area} actions={availableActions} resources={resources}
+          gatheringMastery={gatheringMastery}
           focusActionId={focusActionId}
           player={player} onAction={(action) => {
             showActionHistory();
@@ -65,7 +66,7 @@ export default function MainPage({
   </>;
 }
 
-function ActionButtons({ actions, resources, player, onAction, focusActionId }) {
+function ActionButtons({ actions, resources, player, onAction, focusActionId, gatheringMastery }) {
   const [previewId, setPreviewId] = useState(null);
   const detailsId = useId();
   const preview = actions.find((action) => action.id === previewId);
@@ -100,7 +101,7 @@ function ActionButtons({ actions, resources, player, onAction, focusActionId }) 
           {preview ? <>
             <h3>{preview.label}</h3>
             {preview.oneTime && <span className="action-once-label">One-time action</span>}
-            <ActionDetails action={preview} resources={resources} />
+            <ActionDetails action={preview} resources={resources} gatheringMastery={gatheringMastery} />
           </> : <p className="action-preview-hint">Hover or focus an action to see what it does. Click to perform it.</p>}
         </div>
       ) : <p className="empty-note">No actions available here yet. You can visit another location.</p>}

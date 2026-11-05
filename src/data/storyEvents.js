@@ -1,3 +1,11 @@
+import { hasGatheringMastery } from "../engine/gatheringSystem";
+
+export const firstGatheringMasteryEvent = {
+  id: "first_gathering_mastery",
+  condition: hasGatheringMastery,
+  text: "You pause over what you have gathered, noticing how much there is still to learn. Which stems are worth keeping, where sound wood lies beneath the bark—these are things your hands could come to know. You have a feeling you will return to this work often, and grow better with practice.",
+};
+
 export const storyEvents = [
   {
     id: "first_visit_forest_edge",
@@ -42,4 +50,6 @@ export const storyEvents = [
     text:
       "Little by little, your days begin to form a rhythm. Small choices are becoming the shape of your journey.",
   },
+  // Process this last so discovering mastery is the latest passage that action.
+  firstGatheringMasteryEvent,
 ];

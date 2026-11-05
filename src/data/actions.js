@@ -41,7 +41,7 @@ export const actions = [
     },
     log: "You train with Garron.",
     story:
-      "Garron walks you through the basics, then hands you a simple training stick.",
+      "Garron walks you through the basics, then hands you a wooden training sword.",
   },
 
   {
@@ -50,9 +50,9 @@ export const actions = [
     area: "stonefield_house",
     unlocked: false,
     description:
-      "Practice the basic forms Garron taught you with the training stick.",
+      "Practice the basic forms Garron taught you with the training sword.",
     storyOnFirstUse:
-      "You practice the basic forms Garron taught you, slowly getting used to the weight of the training stick.",
+      "You practice the basic forms Garron taught you, slowly getting used to the weight of the training sword.",
     cost: {
       stamina: 1,
     },
@@ -101,6 +101,7 @@ export const actions = [
 
   {
     id: "explore_forest_edge",
+    gatheringResources: ["herbs"],
     label: "Explore",
     area: "forest_edge",
     cost: {
@@ -113,6 +114,17 @@ export const actions = [
   },
 
   {
+    id: "gather_wood",
+    gatheringResources: ["wood"],
+    label: "Gather Wood",
+    area: "forest_trail",
+    description: "Gather sound fallen branches for training equipment and village supplies.",
+    cost: { stamina: 2 },
+    rewards: { wood: 3 },
+    log: "You gather sound wood from fallen branches along the trail.",
+    storyOnFirstUse: "Beneath the damp bark, some fallen branches are still sound. You set aside the straight pieces, imagining the shape of a practice blade or the frame of a training target. Even here, the forest has something the village can use.",
+  },
+  {
     id: "visit_healer",
     label: "Visit Healer",
     area: "healers_hut",
@@ -124,6 +136,7 @@ export const actions = [
 
   {
     id: "forage_carefully",
+    gatheringResources: ["herbs"],
     label: "Forage Carefully",
     area: "forest_edge",
     unlocked: false,

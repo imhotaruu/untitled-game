@@ -74,7 +74,7 @@ test("collecting grants exactly four pieces, one scene, and no automatic equipme
   }
   assert.deepEqual(after.equipment, before.equipment);
   assert.equal(after.storyLog.filter((text) => text === collect.story).length, 1);
-  assert.equal(after.actionLog.filter((log) => log.type === "item_gain").length, 5); // Includes the earlier Training Stick.
+  assert.equal(after.actionLog.filter((log) => log.type === "item_gain").length, 5); // Includes the earlier Training Sword.
   assert.equal(after.progress.actionCounts.collect_training_armor, 1);
   assert.equal(hasCollectAction(after), false);
   assert.deepEqual(before, snapshot);
@@ -161,7 +161,7 @@ test("version 7 saves gain empty slots and an eligible claim action, but no free
   legacy.inventory.items = legacy.inventory.items.filter((entry) => entry.itemId !== "simple_poultice");
   const snapshot = structuredClone(legacy);
   const migrated = migrateSaveRecord({ version: 7, state: legacy });
-  assert.equal(CURRENT_SAVE_VERSION, 9);
+  assert.equal(CURRENT_SAVE_VERSION, 11);
   for (const slot of armorSlots) assert.equal(migrated.equipment[slot.id], null);
   assert.equal(hasCollectAction(migrated), true);
   assert.deepEqual(migrated.inventory, snapshot.inventory);
@@ -201,7 +201,7 @@ test("save/load retains equipment, bonuses, and one-time reward completion", (t)
   assert.deepEqual(getDerivedCombatStats(after.player, after), getDerivedCombatStats(before.player, before));
   assert.equal(hasCollectAction(after), false);
   assertNoReward(after, performAction(after, collect));
-  assert.equal(JSON.parse(storage.get("new-untitled-game-save-slot-1")).version, 9);
+  assert.equal(JSON.parse(storage.get("new-untitled-game-save-slot-1")).version, 11);
 });
 
 test("existing one-time training also rejects a repeated click", () => {
