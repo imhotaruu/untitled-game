@@ -2,7 +2,8 @@ import { milestones } from "../data/milestones";
 
 export function getCompletedMilestones(state) {
   return milestones.filter((milestone) =>
-    (milestone.completedStoryEventId && state.completedStoryEvents?.includes(milestone.completedStoryEventId))
+    (milestone.completedActionId && state.unlocks?.completedActions?.[milestone.completedActionId])
+    || (milestone.completedStoryEventId && state.completedStoryEvents?.includes(milestone.completedStoryEventId))
     || (milestone.completedRuleId && state.unlocks?.completedRules?.includes(milestone.completedRuleId))
   );
 }

@@ -14,6 +14,7 @@ import { consumeInventoryItem } from "./engine/itemSystem";
 import { createItemFeedback } from "./utils/itemFeedback";
 import { createUpgradeFeedback } from "./utils/upgradeFeedback";
 import { createGatheringFeedback } from "./utils/gatheringFeedback";
+import { createRelationshipFeedback } from "./utils/relationshipFeedback";
 import { getGatheringResourceIds, hasGatheringMastery } from "./engine/gatheringSystem";
 import {
   getAvailableActions,
@@ -35,6 +36,7 @@ import { purchaseUpgrade } from "./engine/upgradeSystem";
 import Topbar from "./components/Topbar";
 import MainPage from "./components/MainPage";
 import CharacterPage from "./components/CharacterPage";
+import RelationshipsPage from "./components/RelationshipsPage";
 import QuickOverviewSidebar from "./components/QuickOverviewSidebar";
 import SaveSlotModal from "./components/SaveSlotModal";
 import BattleConfirmModal from "./components/BattleConfirmModal";
@@ -205,7 +207,8 @@ function App() {
     const criticalRolls = Object.fromEntries(getGatheringResourceIds(action).map((id) => [id, Math.random()]));
     setSession((current) => {
       const after = performAction(current.gameState, action, { criticalRolls });
-      const feedback = createGatheringFeedback(current.gameState, after, action);
+      const feedback = createGatheringFeedback(current.gameState, after, action)
+        || createRelationshipFeedback(current.gameState, after);
       if (!feedback) return { ...current, gameState: after };
       const feedbackSequence = current.feedbackSequence + 1;
       return { gameState: after, feedbackSequence, itemFeedback: { ...feedback, id: feedbackSequence } };
@@ -316,7 +319,9 @@ function App() {
 
       <main
         className={
-          activePage === "character"
+          activePage === "relationships"
+            ? "game-layout relationships-layout"
+            : activePage !== "main"
             ? "game-layout character-layout"
             : "game-layout main-layout"
         }
@@ -339,6 +344,8 @@ function App() {
             />
 
           </>
+        ) : activePage === "relationships" ? (
+          <RelationshipsPage gameState={gameState} />
         ) : (
           <CharacterPage
             player={player}
@@ -354,11 +361,11 @@ function App() {
             onUseItem={handleUseItem}
           />
         )}
-        <QuickOverviewSidebar
+        {activePage !== "relationships" && <QuickOverviewSidebar
           player={player}
           resources={resources}
           discoveredResources={discoveredResources}
-        />
+        />}
       </main>
       </>}
 

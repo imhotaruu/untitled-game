@@ -1,4 +1,13 @@
+import { hasTrainedWithGarron, villagePeople } from "../data/relationships";
+
 export const unlockRules = [
+  {
+    id: "unlock_carpenter_introduction",
+    type: "action",
+    targetId: "meet_rowan",
+    condition: hasTrainedWithGarron,
+    log: { type: "unlock", message: `Garron mentions ${villagePeople.rowan.name}, the carpenter who makes his practice swords. You can meet them at Village Square. Your connections are recorded in Relationships.` },
+  },
   {
     id: "unlock_garron_spar",
     type: "action",

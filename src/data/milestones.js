@@ -1,6 +1,18 @@
 // Codex metadata points to durable completion records, not the capped story log.
 export const milestones = [
   {
+    id: "meet_rowan",
+    title: "The Hands Behind the Blade",
+    description: "Met the village carpenter who makes Garron's practice swords.",
+    completedActionId: "meet_rowan",
+  },
+  {
+    id: "bring_rowan_wood",
+    title: "A Helping Hand",
+    description: "Brought sound wood to the village carpenter and shared a moment at the workbench.",
+    completedActionId: "bring_rowan_wood",
+  },
+  {
     id: "basic_guard",
     title: "A Steadier Stance",
     description: "Learned Basic Guard through practice with Garron.",

@@ -5,9 +5,10 @@ function Topbar({
   onChangePage,
   onOpenModal,
 }) {
+  const isMainPage = activePage === "main";
   return (
-    <header className="topbar">
-      <nav className="nav-tabs" aria-label="Main navigation">
+    <header className={isMainPage ? "topbar" : "page-toolbar"}>
+      {isMainPage ? <nav className="nav-tabs" aria-label="Main navigation">
         <button
           className={activePage === "main" ? "nav-btn active" : "nav-btn"}
           type="button"
@@ -26,19 +27,32 @@ function Topbar({
           Character
         </button>
 
-        {["Story", "Relationships", "Party", "Codex"].map((label) => (
+        <button className="nav-btn nav-upcoming" type="button" disabled>
+          Story<span>Soon</span>
+        </button>
+        <button
+          className={activePage === "relationships" ? "nav-btn active" : "nav-btn"}
+          type="button"
+          aria-current={activePage === "relationships" ? "page" : undefined}
+          onClick={() => onChangePage("relationships")}
+        >Relationships</button>
+        {["Party", "Codex"].map((label) => (
           <button key={label} className="nav-btn nav-upcoming" type="button" disabled>
             {label}<span>Soon</span>
           </button>
         ))}
-      </nav>
+      </nav> : <nav aria-label="Return navigation">
+        <button className="back-to-main" type="button" onClick={() => onChangePage("main")}>
+          <span aria-hidden="true">←</span> Back to Main
+        </button>
+      </nav>}
 
       <div className="topbar-right">
-        <div className="status-strip" aria-label="Current status">
+        {isMainPage && <div className="status-strip" aria-label="Current status">
           <span>Area: {currentAreaLabel}</span>
           <span>{player.day}</span>
           <span>Path: {player.path}</span>
-        </div>
+        </div>}
 
         <div className="top-actions">
           <button type="button" aria-haspopup="dialog" onClick={() => onOpenModal("settings")}>

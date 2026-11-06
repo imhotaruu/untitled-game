@@ -1,4 +1,33 @@
+import { villagePeople } from "./relationships";
+
+const carpenterName = villagePeople.rowan.name;
+
 export const actions = [
+  {
+    id: "meet_rowan",
+    label: `Meet ${carpenterName}`,
+    category: "story",
+    area: "village_square",
+    unlocked: false,
+    oneTime: true,
+    description: "Meet the carpenter who makes Garron's wooden training swords.",
+    unlocksOnComplete: { actions: ["bring_rowan_wood"] },
+    log: `You met ${carpenterName}. A new connection is recorded in Relationships.`,
+    story: `A carpenter at the square notices your practice sword. ‘One of mine,’ they say, brushing shavings from their sleeve. ‘I'm ${carpenterName}. Garron brings them back with more dents than I thought wood could hold.’ Their smile softens as they turn a split offcut in their hands. ‘If you find sound fallen wood along the forest trail, I could use a small bundle. Six pieces would do. No hurry—the woods aren't going anywhere.’`,
+  },
+  {
+    id: "bring_rowan_wood",
+    label: `Bring Wood to ${carpenterName}`,
+    category: "story",
+    area: "village_square",
+    unlocked: false,
+    oneTime: true,
+    description: `Give ${carpenterName} 6 Wood for the workshop. A one-time favor.`,
+    cost: { resources: { wood: 6 } },
+    rewards: { gold: 5 },
+    log: `You gave ${carpenterName} 6 Wood and received 5 Gold. Your connection has grown.`,
+    story: `${carpenterName} turns each piece of wood in the light, then makes room for you beside the workbench. ‘Good grain. You took care choosing these.’ For a while, they show you how to follow the grain instead of fighting it. When you leave, five coins rest in your palm, and their farewell carries the warmth of someone expecting to see you again.`,
+  },
   {
     id: "talk_village_square",
     label: "Talk",
