@@ -7,6 +7,9 @@ import { upgrades } from "./data/upgrades";
 
 import { createGameState } from "./engine/createGameState";
 import { performAction } from "./engine/actionSystem";
+import { craftItem, getCraftingBlockReason } from "./engine/craftingSystem";
+import { getQuestStatus, isCraftingUnlocked } from "./engine/questSystem";
+import { recipes } from "./data/recipes";
 import { getPendingExploration, resolveExplorationEncounter } from "./engine/explorationSystem";
 import { dismissCombat, performCombatMove } from "./engine/combatSystem";
 import { moveToArea } from "./engine/areaSystem";
@@ -38,9 +41,12 @@ import Topbar from "./components/Topbar";
 import MainPage from "./components/MainPage";
 import CharacterPage from "./components/CharacterPage";
 import RelationshipsPage from "./components/RelationshipsPage";
+import CraftingPage from "./components/CraftingPage";
+import QuestsPage from "./components/QuestsPage";
 import QuickOverviewSidebar from "./components/QuickOverviewSidebar";
 import SaveSlotModal from "./components/SaveSlotModal";
 import BattleConfirmModal from "./components/BattleConfirmModal";
+import StoryConfirmModal from "./components/StoryConfirmModal";
 import CombatScreen from "./components/CombatScreen";
 import SettingsModal from "./components/SettingsModal";
 import ItemFeedbackPopup from "./components/ItemFeedbackPopup";
@@ -91,8 +97,10 @@ function App() {
   const [activePage, setActivePage] = useState("main");
   const [characterTab, setCharacterTab] = useState("overview");
   const [pendingBattleId, setPendingBattleId] = useState(null);
+  const [pendingStoryId, setPendingStoryId] = useState(null);
   const [focusActionId, setFocusActionId] = useState(null);
   const pendingBattle = actions.find((action) => action.id === pendingBattleId);
+  const pendingStory = actions.find((action) => action.id === pendingStoryId);
 
   const { player, resources, actionLog, storyLog, unlocks } = gameState;
 
@@ -130,6 +138,7 @@ function App() {
   }
 
   function openModal(modalType) {
+    setPendingStoryId(null);
     setPendingBattleId(null);
     dismissItemFeedback();
     if (modalType !== "settings") refreshSaveSlots();
@@ -188,12 +197,14 @@ function App() {
 
   function handleChangePage(page) {
     if (gameState.combat && page !== "main") return;
+    setPendingStoryId(null);
     dismissItemFeedback();
     setFocusActionId(null);
     setActivePage(page);
   }
 
   function handleMoveToArea(area) {
+    setPendingStoryId(null);
     dismissItemFeedback();
     setFocusActionId(null);
     setGameState((currentState) => moveToArea(currentState, area));
@@ -206,15 +217,49 @@ function App() {
       setPendingBattleId(action.id);
       return;
     }
+    if (action.category === "story" && preferences.confirmStoryActions) {
+      dismissItemFeedback();
+      setPendingStoryId(action.id);
+      return;
+    }
+    executeAction(action);
+  }
+
+  function handleConfirmStory() {
+    if (!pendingStory) return;
+    setPendingStoryId(null);
+    executeAction(pendingStory);
+  }
+
+  function executeAction(action) {
     const criticalRolls = Object.fromEntries(getGatheringResourceIds(action).map((id) => [id, Math.random()]));
     const encounterRoll = Math.random();
     setSession((current) => {
       const after = performAction(current.gameState, action, { criticalRolls, encounterRoll });
-      const feedback = createGatheringFeedback(current.gameState, after, action)
+      const questBefore = getQuestStatus(current.gameState, "rowan_first_craft");
+      const questAfter = getQuestStatus(after, "rowan_first_craft");
+      const questFeedback = questBefore !== questAfter && ["active", "completed"].includes(questAfter) ? {
+        tone: "success", title: questAfter === "active" ? "Quest Accepted" : "Quest Completed", itemLabel: "A Shape of Your Own",
+        messages: questAfter === "active" ? ["Received 1 Cloth. Crafting is now available.", "Track your lesson in Quests."] : ["Received 5 Gold. Your handmade sword is yours to keep."], duration: 7000,
+      } : null;
+      const feedback = questFeedback || createGatheringFeedback(current.gameState, after, action)
         || createRelationshipFeedback(current.gameState, after);
       if (!feedback) return { ...current, gameState: after };
       const feedbackSequence = current.feedbackSequence + 1;
       return { gameState: after, feedbackSequence, itemFeedback: { ...feedback, id: feedbackSequence } };
+    });
+  }
+
+  function handleCraft(recipeId) {
+    setSession((current) => {
+      const before = current.gameState;
+      const reason = getCraftingBlockReason(before, recipeId);
+      const after = craftItem(before, recipeId);
+      const recipe = recipes.find((entry) => entry.id === recipeId);
+      const feedbackSequence = current.feedbackSequence + 1;
+      return { gameState: after, feedbackSequence, itemFeedback: { id: feedbackSequence,
+        tone: reason ? "info" : "success", title: reason ? "Cannot Craft" : "Item Crafted", itemLabel: recipe?.label || "Crafting",
+        messages: reason ? [reason, "No materials were spent."] : ["Added to Character → Items.", "Show your work to Rowan to finish the quest."], duration: 7000 } };
     });
   }
 
@@ -261,6 +306,7 @@ function App() {
   }
 
   function handleLoadFromSlot(slotId) {
+    setPendingStoryId(null);
     const savedState = loadGameFromSlot(slotId);
 
     if (!savedState) {
@@ -290,6 +336,7 @@ function App() {
   }
 
   function handleResetCurrentGame() {
+    setPendingStoryId(null);
     setFocusActionId(null);
     setPendingBattleId(null);
     const resetState = createGameState();
@@ -301,6 +348,7 @@ function App() {
   }
 
   function handleDeleteAllSaves() {
+    setPendingStoryId(null);
     setFocusActionId(null);
     setPendingBattleId(null);
     clearAllSaveSlots();
@@ -328,6 +376,7 @@ function App() {
         onOpenModal={openModal}
       /> : <>
       <Topbar
+        craftingUnlocked={isCraftingUnlocked(gameState)}
         activePage={activePage}
         currentAreaLabel={currentAreaLabel}
         player={player}
@@ -337,8 +386,8 @@ function App() {
 
       <main
         className={
-          activePage === "relationships"
-            ? "game-layout relationships-layout"
+          ["relationships", "crafting", "quests"].includes(activePage)
+            ? "game-layout full-page-layout"
             : activePage !== "main"
             ? "game-layout character-layout"
             : "game-layout main-layout"
@@ -366,6 +415,10 @@ function App() {
           </>
         ) : activePage === "relationships" ? (
           <RelationshipsPage gameState={gameState} />
+        ) : activePage === "crafting" ? (
+          <CraftingPage gameState={gameState} onCraft={handleCraft} onOpenItems={() => { setCharacterTab("items"); handleChangePage("character"); }} />
+        ) : activePage === "quests" ? (
+          <QuestsPage gameState={gameState} onChangePage={handleChangePage} />
         ) : (
           <CharacterPage
             player={player}
@@ -381,7 +434,7 @@ function App() {
             onUseItem={handleUseItem}
           />
         )}
-        {activePage !== "relationships" && <QuickOverviewSidebar
+        {["main", "character"].includes(activePage) && <QuickOverviewSidebar
           player={player}
           resources={resources}
           discoveredResources={discoveredResources}
@@ -390,6 +443,9 @@ function App() {
       </>}
 
       <ItemFeedbackPopup feedback={itemFeedback} onDismiss={dismissItemFeedback} />
+
+      {pendingStory && !gameState.combat && <StoryConfirmModal key={pendingStory.id}
+        action={pendingStory} onConfirm={handleConfirmStory} onCancel={() => setPendingStoryId(null)} />}
 
       {pendingBattle && !gameState.combat && <BattleConfirmModal
         action={pendingBattle}

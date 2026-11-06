@@ -7,6 +7,15 @@ export default function SettingsModal({ preferences, saved, onChange, onClose })
   return <CombatOverlay title="Settings" className="settings-modal" onClose={onClose}>
     <div className="settings-fields">
       <div className="settings-field">
+        <label htmlFor={`${id}-story-confirm`}>Confirm story actions</label>
+        <p id={`${id}-story-confirm-help`}>Ask before performing gold-outlined story actions, including accepting and completing quests.</p>
+        <select id={`${id}-story-confirm`} aria-describedby={`${id}-story-confirm-help`} value={String(preferences.confirmStoryActions)}
+          onChange={(event) => onChange({ ...preferences, confirmStoryActions: event.target.value === "true" })}>
+          <option value="true">On — ask before continuing</option>
+          <option value="false">Off — continue immediately</option>
+        </select>
+      </div>
+      <div className="settings-field">
         <label htmlFor={`${id}-pace`}>Combat pacing</label>
         <p id={`${id}-pace-help`}>Controls the pauses between combat messages.</p>
         <select id={`${id}-pace`} aria-describedby={`${id}-pace-help`} value={preferences.combatPace}

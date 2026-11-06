@@ -33,14 +33,18 @@ test("missing, malformed, and partial preferences fall back safely", (t) => {
     assert.deepEqual(loadPreferences(), DEFAULT_PREFERENCES);
   }
   assert.deepEqual(normalizePreferences({ combatPace: "fast", motion: "invalid", extra: true }),
-    { combatPace: "fast", motion: "full" });
+    { combatPace: "fast", motion: "full", confirmStoryActions: true });
   assert.deepEqual(normalizePreferences({ combatPace: "__proto__", motion: "reduced" }),
-    { combatPace: "normal", motion: "reduced" });
+    { combatPace: "normal", motion: "reduced", confirmStoryActions: true });
+  assert.equal(normalizePreferences({ confirmStoryActions: false }).confirmStoryActions, false);
+  for (const value of ["false", null, 0, [], {}]) {
+    assert.equal(normalizePreferences({ confirmStoryActions: value }).confirmStoryActions, true);
+  }
 });
 
 test("preferences survive reload, slot changes, and deleting all game saves", (t) => {
   mockStorage(t);
-  const preferences = { combatPace: "slow", motion: "reduced" };
+  const preferences = { combatPace: "slow", motion: "reduced", confirmStoryActions: false };
   const state = createGameState();
   saveGameToSlot(1, state);
   assert.equal(savePreferences(preferences), true);
@@ -73,10 +77,10 @@ test("unavailable preference storage falls back and reports failed persistence",
 test("legacy device motion preferences migrate to Full without losing pacing", (t) => {
   const storage = mockStorage(t);
   storage.setItem(PREFERENCES_KEY, JSON.stringify({ combatPace: "slow", motion: "system" }));
-  assert.deepEqual(loadPreferences(), { combatPace: "slow", motion: "full" });
+  assert.deepEqual(loadPreferences(), { combatPace: "slow", motion: "full", confirmStoryActions: true });
   for (const motion of ["reduced", "full"]) {
     savePreferences({ combatPace: "fast", motion });
-    assert.deepEqual(loadPreferences(), { combatPace: "fast", motion });
+    assert.deepEqual(loadPreferences(), { combatPace: "fast", motion, confirmStoryActions: true });
   }
 });
 

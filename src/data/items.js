@@ -2,6 +2,12 @@ import { equipmentSlots } from "./equipmentSlots";
 
 export const items = [
   {
+    id: "handmade_training_sword", label: "Handmade Training Sword", type: "equipment",
+    slot: "weapon", rarity: "common", category: "Training Gear",
+    description: "Your own wooden practice sword, carefully shaped and bound with a cloth grip. Rowan's guidance shows in its balance; your effort shows in every mark.",
+    equipmentBonuses: { attackPower: 2, guardPower: 1 },
+  },
+  {
     id: "training_stick",
     label: "Training Sword",
     type: "equipment",

@@ -4,6 +4,7 @@ import { defaultPlayer } from "../data/defaultPlayer";
 import { defaultResources } from "../data/defaultResources";
 import { starterEquipment, starterInventory } from "../data/items";
 import { normalizeGatheringMastery } from "./gatheringSystem";
+import { normalizeCrafting } from "./craftingSystem";
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -27,6 +28,7 @@ export function createGameState() {
     inventory: clone(starterInventory),
     equipment: clone(starterEquipment),
     combat: null,
+    crafting: normalizeCrafting(null),
     exploration: { pending: null, sequence: 0, resolved: 0, cooldown: 0, discovered: [] },
     gatheringMastery: normalizeGatheringMastery(null),
 

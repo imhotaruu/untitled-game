@@ -1,6 +1,7 @@
 import { storyEvents } from "../data/storyEvents";
 import { actions } from "../data/actions";
 import { beginExplorationEncounter } from "./explorationSystem";
+import { getQuestStatus } from "./questSystem";
 import {
   addResources,
   canPayResourceCost,
@@ -373,6 +374,11 @@ export function performAction(currentState, action, options = {}) {
   const unavailableReason = getActionUnavailableReason(action, nextState.player.area, nextState.unlocks);
   if (unavailableReason) {
     nextState.actionLog = addLog(nextState.actionLog, createLogEntry("warning", unavailableReason));
+    return nextState;
+  }
+
+  if (action.questStage && getQuestStatus(nextState, action.questStage.id) !== action.questStage.status) {
+    nextState.actionLog = addLog(nextState.actionLog, createLogEntry("warning", "That quest step is not available yet."));
     return nextState;
   }
 

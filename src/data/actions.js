@@ -4,6 +4,24 @@ const carpenterName = villagePeople.rowan.name;
 
 export const actions = [
   {
+    id: "begin_rowan_crafting", label: `Learn Crafting with ${carpenterName}`,
+    area: "village_square", category: "story", unlocked: false, oneTime: true,
+    questStage: { id: "rowan_first_craft", status: "available" },
+    description: "Accept Rowan's lesson and receive 1 Cloth for your first sword grip. Bring 4 Wood to the workbench.",
+    rewards: { cloth: 1 }, unlocksOnComplete: { systems: ["crafting"] },
+    log: "Quest accepted: A Shape of Your Own. Unlocked Crafting. Rowan provided 1 Cloth.",
+    story: `${carpenterName} clears a space at the workbench. ‘You've brought me good wood. Now let's see what you can make of it.’ They set down a strip of cloth. ‘Four sound pieces of wood, a little patience, and this for the grip. We'll start with a practice sword. Keep it when we're done.’`,
+  },
+  {
+    id: "complete_rowan_crafting", label: `Show Your Work to ${carpenterName}`,
+    area: "village_square", category: "story", unlocked: false, oneTime: true,
+    questStage: { id: "rowan_first_craft", status: "ready" },
+    description: "Finish Rowan's first crafting lesson. Keep your handmade sword and receive 5 Gold.",
+    rewards: { gold: 5 },
+    log: "Quest completed: A Shape of Your Own. Received 5 Gold; your handmade sword is yours to keep.",
+    story: `${carpenterName} tests the grip, then hands the sword back. ‘Not perfectly straight. Neither was my first.’ They place five coins on the bench. ‘For seeing it through. Take care of that blade—you'll remember more from using it than from watching me.’`,
+  },
+  {
     id: "meet_rowan",
     label: `Meet ${carpenterName}`,
     category: "story",
@@ -33,15 +51,6 @@ export const actions = [
     label: "Talk",
     area: "village_square",
     log: "You listen to the quiet chatter of the village.",
-  },
-
-  {
-    id: "continue_story_village_square",
-    label: "Continue Story",
-    category: "story",
-    area: "village_square",
-    log: "You continue the story.",
-    story: "You take your first true step beyond the quiet safety of the village.",
   },
 
   {

@@ -4,6 +4,7 @@ function Topbar({
   player,
   onChangePage,
   onOpenModal,
+  craftingUnlocked,
 }) {
   const isMainPage = activePage === "main";
   return (
@@ -36,6 +37,8 @@ function Topbar({
           aria-current={activePage === "relationships" ? "page" : undefined}
           onClick={() => onChangePage("relationships")}
         >Relationships</button>
+        <button className="nav-btn" type="button" onClick={() => onChangePage("quests")}>Quests</button>
+        {craftingUnlocked && <button className="nav-btn" type="button" onClick={() => onChangePage("crafting")}>Crafting</button>}
         {["Party", "Codex"].map((label) => (
           <button key={label} className="nav-btn nav-upcoming" type="button" disabled>
             {label}<span>Soon</span>

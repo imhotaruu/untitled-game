@@ -1,6 +1,17 @@
 import { hasTrainedWithGarron, villagePeople } from "../data/relationships";
+import { getQuestStatus } from "./questSystem";
 
 export const unlockRules = [
+  {
+    id: "unlock_rowan_crafting_lesson", type: "action", targetId: "begin_rowan_crafting",
+    condition: (state) => getQuestStatus(state, "rowan_first_craft") === "available",
+    log: { type: "unlock", message: "Rowan has a crafting lesson for you at Village Square." },
+  },
+  {
+    id: "unlock_rowan_crafting_turn_in", type: "action", targetId: "complete_rowan_crafting",
+    condition: (state) => getQuestStatus(state, "rowan_first_craft") === "ready",
+    log: { type: "unlock", message: "Your first sword is ready. Show your work to Rowan at Village Square." },
+  },
   {
     id: "unlock_carpenter_introduction",
     type: "action",

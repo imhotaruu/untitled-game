@@ -5,8 +5,9 @@ import { normalizeGatheringMastery } from "./gatheringSystem";
 import { firstGatheringMasteryEvent } from "../data/storyEvents";
 import { processStoryEvents } from "./storySystem";
 import { normalizeExploration } from "./explorationSystem";
+import { normalizeCrafting } from "./craftingSystem";
 
-export const CURRENT_SAVE_VERSION = 12;
+export const CURRENT_SAVE_VERSION = 13;
 
 function isPlainObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -86,6 +87,7 @@ export function migrateSaveState(savedState) {
   const migratedState = mergeWithDefaults(defaultState, savedState);
 
   migratedState.player = normalizePlayer(migratedState.player);
+  migratedState.crafting = normalizeCrafting(migratedState.crafting);
   migratedState.gatheringMastery = normalizeGatheringMastery(migratedState.gatheringMastery);
   migratedState.combat = normalizeCombat(migratedState.combat, migratedState.player.area);
   migratedState.exploration = normalizeExploration(migratedState.exploration, migratedState.player.area, Boolean(migratedState.combat));
