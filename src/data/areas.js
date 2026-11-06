@@ -1,17 +1,17 @@
 export const areas = [
   {
-    id: "village_square",
-    label: "Village Square",
-    category: "Village",
-    description: "The quiet heart of the village.",
-    discovered: true,
-  },
-
-  {
     id: "stonefield_house",
     label: "Stonefield House",
     category: "Village",
     description: "The small home where your new life begins.",
+    discovered: true,
+  },
+
+  {
+    id: "village_square",
+    label: "Village Square",
+    category: "Village",
+    description: "The quiet heart of the village.",
     discovered: true,
   },
 

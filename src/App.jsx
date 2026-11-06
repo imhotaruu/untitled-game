@@ -7,6 +7,7 @@ import { upgrades } from "./data/upgrades";
 
 import { createGameState } from "./engine/createGameState";
 import { performAction } from "./engine/actionSystem";
+import { getPendingExploration, resolveExplorationEncounter } from "./engine/explorationSystem";
 import { dismissCombat, performCombatMove } from "./engine/combatSystem";
 import { moveToArea } from "./engine/areaSystem";
 import { equipItem, unequipSlot } from "./engine/equipmentSystem";
@@ -199,19 +200,36 @@ function App() {
   }
 
   function handleAction(action) {
+    if (gameState.exploration?.pending) return;
     if (action.encounterId) {
       dismissItemFeedback();
       setPendingBattleId(action.id);
       return;
     }
     const criticalRolls = Object.fromEntries(getGatheringResourceIds(action).map((id) => [id, Math.random()]));
+    const encounterRoll = Math.random();
     setSession((current) => {
-      const after = performAction(current.gameState, action, { criticalRolls });
+      const after = performAction(current.gameState, action, { criticalRolls, encounterRoll });
       const feedback = createGatheringFeedback(current.gameState, after, action)
         || createRelationshipFeedback(current.gameState, after);
       if (!feedback) return { ...current, gameState: after };
       const feedbackSequence = current.feedbackSequence + 1;
       return { gameState: after, feedbackSequence, itemFeedback: { ...feedback, id: feedbackSequence } };
+    });
+  }
+
+  function handleEncounterChoice(token, choiceId) {
+    setFocusActionId(gameState.player.area === "forest_trail" ? "explore_forest_trail" : "explore_forest_edge");
+    setSession((current) => {
+      const encounter = getPendingExploration(current.gameState);
+      const after = resolveExplorationEncounter(current.gameState, token, choiceId);
+      if (after === current.gameState) return current;
+      const choice = encounter.choices.find((entry) => entry.id === choiceId);
+      const rewards = Object.entries(choice.rewards || {}).map(([id, amount]) => `+${amount} ${after.resources[id].label}`);
+      const feedbackSequence = current.feedbackSequence + 1;
+      return { gameState: after, feedbackSequence, itemFeedback: { id: feedbackSequence,
+        tone: "success", title: "Encounter Resolved", itemLabel: encounter.title,
+        messages: rewards.length ? rewards : [choice.text], duration: 7000 } };
     });
   }
 
@@ -257,7 +275,7 @@ function App() {
     if (characterTab === "mastery" && !hasGatheringMastery(savedState)) setCharacterTab("overview");
     setFocusActionId(null);
     setPendingBattleId(null);
-    if (savedState.combat) setActivePage("main");
+    if (savedState.combat || savedState.exploration?.pending) setActivePage("main");
     refreshSaveSlots();
     closeModal();
   }
@@ -329,6 +347,8 @@ function App() {
         {activePage === "main" ? (
           <>
             <MainPage
+              explorationEncounter={getPendingExploration(gameState)}
+              onEncounterChoice={handleEncounterChoice}
               gatheringMastery={gameState.gatheringMastery}
               focusActionId={focusActionId}
               player={player}

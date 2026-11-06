@@ -30,7 +30,7 @@ export function getDamage(attacker, defender, multiplier = 1, guarding = false, 
 
 export function startCombat(state, encounterId, seed = 1) {
   const encounter = encounters[encounterId];
-  if (state.combat || !encounter || state.player.area !== encounter.area
+  if (state.combat || state.exploration?.pending || !encounter || state.player.area !== encounter.area
     || !state.unlocks?.systems?.[encounter.requiredSystem]) return state;
 
   const stats = getDerivedCombatStats(state.player, state);

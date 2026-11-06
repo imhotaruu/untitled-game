@@ -4,8 +4,9 @@ import { normalizeCombat } from "./combatSystem";
 import { normalizeGatheringMastery } from "./gatheringSystem";
 import { firstGatheringMasteryEvent } from "../data/storyEvents";
 import { processStoryEvents } from "./storySystem";
+import { normalizeExploration } from "./explorationSystem";
 
-export const CURRENT_SAVE_VERSION = 11;
+export const CURRENT_SAVE_VERSION = 12;
 
 function isPlainObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -87,6 +88,8 @@ export function migrateSaveState(savedState) {
   migratedState.player = normalizePlayer(migratedState.player);
   migratedState.gatheringMastery = normalizeGatheringMastery(migratedState.gatheringMastery);
   migratedState.combat = normalizeCombat(migratedState.combat, migratedState.player.area);
+  migratedState.exploration = normalizeExploration(migratedState.exploration, migratedState.player.area, Boolean(migratedState.combat));
+  if (migratedState.exploration.pending) migratedState.player.isResting = false;
   if (migratedState.combat) migratedState.player.isResting = false;
 
   // New rewards become claimable in eligible older saves; no items are granted on load.

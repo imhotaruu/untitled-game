@@ -26,7 +26,7 @@ function isRecoveryComplete(player) {
 }
 
 export function processGameTick(currentState, deltaSeconds) {
-  if (currentState.combat) return currentState;
+  if (currentState.combat || currentState.exploration?.pending) return currentState;
   if (!currentState.player.isResting) {
     return currentState;
   }

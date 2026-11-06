@@ -1,5 +1,7 @@
 // Codex metadata points to durable completion records, not the capped story log.
 export const milestones = [
+  { id: "first_exploration_encounter", title: "Off the Beaten Path", description: "Made a choice during an exploration encounter.", completedStoryEventId: "first_exploration_encounter" },
+  { id: "first_rare_encounter", title: "An Unusual Find", description: "Made a choice during a rare exploration encounter.", completedStoryEventId: "first_rare_encounter" },
   {
     id: "meet_rowan",
     title: "The Hands Behind the Blade",

@@ -1,5 +1,6 @@
 import { storyEvents } from "../data/storyEvents";
 import { actions } from "../data/actions";
+import { beginExplorationEncounter } from "./explorationSystem";
 import {
   addResources,
   canPayResourceCost,
@@ -362,7 +363,7 @@ function applyProgressMilestones(state, action) {
 }
 
 export function performAction(currentState, action, options = {}) {
-  if (currentState.combat) return currentState;
+  if (currentState.combat || currentState.exploration?.pending) return currentState;
   const nextState = clone(currentState);
 
   ensureProgressGroup(nextState);
@@ -482,6 +483,8 @@ export function performAction(currentState, action, options = {}) {
 
   processStoryEvents(nextState, storyEvents);
   processUnlocks(nextState);
+
+  beginExplorationEncounter(nextState, action, options.encounterRoll);
 
   return nextState;
 }

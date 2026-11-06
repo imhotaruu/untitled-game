@@ -27,6 +27,7 @@ export function createGameState() {
     inventory: clone(starterInventory),
     equipment: clone(starterEquipment),
     combat: null,
+    exploration: { pending: null, sequence: 0, resolved: 0, cooldown: 0, discovered: [] },
     gatheringMastery: normalizeGatheringMastery(null),
 
     actionLog: ["Prototype initialized."],

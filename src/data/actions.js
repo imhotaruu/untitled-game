@@ -154,6 +154,14 @@ export const actions = [
     storyOnFirstUse: "Beneath the damp bark, some fallen branches are still sound. You set aside the straight pieces, imagining the shape of a practice blade or the frame of a training target. Even here, the forest has something the village can use.",
   },
   {
+    id: "explore_forest_trail",
+    label: "Explore",
+    area: "forest_trail",
+    description: "Follow the trail and look for small discoveries among the trees.",
+    cost: { stamina: 1 },
+    log: "You explore the winding forest trail.",
+  },
+  {
     id: "visit_healer",
     label: "Visit Healer",
     area: "healers_hut",

@@ -284,6 +284,14 @@ button.primary {
   padding: 0;
 }
 
+.main-layout .area-button-list button {
+  padding: 8px 14px;
+  min-height: 42px;
+  line-height: 20px;
+  text-align: left;
+  transform: none;
+}
+
 /* ─── Scene panel ───────────────────────────────────────── */
 
 .scene-panel {
@@ -1322,6 +1330,19 @@ button.primary {
   font-size: 0.76rem;
   line-height: 1.5;
 }
+
+/* Exploration choices occupy the normal action column. */
+.exploration-encounter { min-width: 0; padding: 20px; border: 1px solid var(--line); border-left: 3px solid #a5b59c; border-radius: var(--radius-sm); align-self: start; }
+.exploration-encounter[data-rarity="rare"] { border-left-color: var(--gold); background: #c9a84c08; }
+.exploration-rarity { font-size: 0.8rem; color: #a5b59c; }
+.exploration-encounter[data-rarity="rare"] .exploration-rarity { color: var(--gold); }
+.exploration-encounter h2 { margin: 10px 0 16px; font-size: 1.2rem; }
+.exploration-encounter p { color: var(--text-sub); line-height: 1.75; }
+.exploration-choices { display: grid; gap: 10px; margin: 24px 0 16px; }
+.exploration-choices button { display: grid; gap: 7px; padding: 12px 14px; text-align: left; text-transform: none; letter-spacing: normal; font-size: 0.9rem; }
+.exploration-choices button > span { color: var(--text-sub); font-size: 0.8rem; font-weight: 400; }
+.exploration-encounter .exploration-hint { font-size: 0.8rem; }
+.exploration-encounter :focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 
 /* ─── Village relationships ─────────────────────────────── */
 .game-layout.relationships-layout {

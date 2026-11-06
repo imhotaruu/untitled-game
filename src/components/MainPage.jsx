@@ -3,11 +3,12 @@ import ActionDetails from "./ActionDetails";
 import HistoryPanel from "./HistoryPanel";
 import StoryPanel from "./StoryPanel";
 import Panel from "./ui/Panel";
+import ExplorationEncounter from "./ExplorationEncounter";
 
 export default function MainPage({
   player, resources, actionLog, storyLog, currentArea, currentAreaLabel,
   discoveredAreaGroups, availableActions, onMoveToArea, onAction,
-  focusActionId, gatheringMastery,
+  focusActionId, gatheringMastery, explorationEncounter, onEncounterChoice,
 }) {
   const [historyRevision, setHistoryRevision] = useState(0);
   const sceneId = useId();
@@ -27,6 +28,8 @@ export default function MainPage({
                 <button key={area.id} type="button"
                   className={area.id === player.area ? "primary" : ""}
                   aria-current={area.id === player.area ? "location" : undefined}
+                  disabled={Boolean(explorationEncounter)}
+                  title={explorationEncounter ? "Choose an encounter response before traveling." : undefined}
                   onClick={() => {
                     showActionHistory();
                     onMoveToArea(area);
@@ -50,13 +53,17 @@ export default function MainPage({
       </header>
 
       <div className="scene-content-split">
-        <ActionButtons key={player.area} actions={availableActions} resources={resources}
+        {explorationEncounter ? <ExplorationEncounter encounter={explorationEncounter}
+          resources={resources} onChoose={(token, choiceId) => {
+            showActionHistory();
+            onEncounterChoice(token, choiceId);
+          }} /> : <ActionButtons key={player.area} actions={availableActions} resources={resources}
           gatheringMastery={gatheringMastery}
           focusActionId={focusActionId}
           player={player} onAction={(action) => {
             showActionHistory();
             onAction(action);
-          }} />
+          }} />}
 
         <StoryPanel entries={storyLog} />
       </div>
