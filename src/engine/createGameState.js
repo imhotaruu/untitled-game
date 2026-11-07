@@ -5,6 +5,7 @@ import { defaultResources } from "../data/defaultResources";
 import { starterEquipment, starterInventory } from "../data/items";
 import { normalizeGatheringMastery } from "./gatheringSystem";
 import { normalizeCrafting } from "./craftingSystem";
+import { chapterNarrative, initialNarrative } from "./prologueSystem";
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -22,6 +23,7 @@ function createInitialUnlockMap(items, defaultKey = "discovered") {
 
 export function createGameState() {
   return {
+    narrative: chapterNarrative(),
     player: clone(defaultPlayer),
     resources: clone(defaultResources),
 
@@ -59,4 +61,11 @@ export function createGameState() {
       completedRules: [],
     },
   };
+}
+
+export function createNewJourney() {
+  const state = createGameState();
+  return { ...state, narrative: initialNarrative(),
+    player: { ...state.player, area: "stonefield_house" },
+    progress: { ...state.progress, areaVisits: {} }, actionLog: [], storyLog: [] };
 }

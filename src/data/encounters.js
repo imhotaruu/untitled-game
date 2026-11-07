@@ -1,4 +1,11 @@
+import { divineMoves } from "./divineTutorial";
+
 export const encounters = {
+  chaos_fragment: {
+    id: "chaos_fragment", label: "Starwake — The Goddess of Stars", area: "divine_veil", requiredSystem: "prologue_only",
+    tutorial: true,
+    opponent: { name: "Fragment of Chaos", maxHp: 38, attackPower: 7, defense: 1, guardPower: 0, accuracy: 95, evasion: 0, criticalChance: 0 },
+  },
   garron_spar: {
     id: "garron_spar",
     label: "Spar with Garron",
@@ -29,3 +36,7 @@ export const combatMoves = [
   { id: "guard", label: "Guard", cost: 0, restore: 1, description: "Add Guard Power to your defense for this turn. Restore 1 sparring stamina." },
   { id: "recover", label: "Recover", cost: 0, restore: 3, description: "Restore 3 sparring stamina. Garron still takes his turn." },
 ];
+
+export function getCombatMoves(combat) {
+  return combat?.encounterId === "chaos_fragment" ? divineMoves : combatMoves;
+}

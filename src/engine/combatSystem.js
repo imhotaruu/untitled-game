@@ -1,5 +1,7 @@
-import { combatMoves, encounters } from "../data/encounters";
+import { getCombatMoves, encounters } from "../data/encounters";
 import { getDerivedCombatStats } from "./derivedStats";
+import { getDivinePhase } from "../data/divineTutorial";
+import { resolveDivineTutorial, isValidDivineTutorial } from "./divineTutorial";
 
 const results = {
   victory: "You win the spar. Garron lowers his weapon with a nod.",
@@ -8,6 +10,10 @@ const results = {
 };
 
 export function getCombatIntent(combat) {
+  if (combat.encounterId === "chaos_fragment") {
+    const phase = getDivinePhase(combat);
+    return { label: phase?.label || "The fragment is defeated", description: phase?.intent || "Return to the seal.", kind: "wait" };
+  }
   const intents = encounters[combat.encounterId].intents;
   return intents[(combat.round - 1) % intents.length];
 }
@@ -29,6 +35,7 @@ export function getDamage(attacker, defender, multiplier = 1, guarding = false, 
 }
 
 export function startCombat(state, encounterId, seed = 1) {
+  if (state.narrative?.phase === "prologue") return state;
   const encounter = encounters[encounterId];
   if (state.combat || state.exploration?.pending || !encounter || state.player.area !== encounter.area
     || !state.unlocks?.systems?.[encounter.requiredSystem]) return state;
@@ -75,9 +82,10 @@ function strike(combat, actor, multiplier, guarding, emit) {
 
 // Frames are presentation snapshots; resolving them never advances the turn twice.
 export function resolveCombatTurn(currentCombat, moveId) {
+  if (currentCombat?.encounterId === "chaos_fragment") return resolveDivineTutorial(currentCombat, moveId);
   const unchanged = { combat: currentCombat, frames: [] };
   if (currentCombat?.status !== "active") return unchanged;
-  const move = combatMoves.find((entry) => entry.id === moveId);
+  const move = getCombatMoves(currentCombat).find((entry) => entry.id === moveId);
   if (moveId !== "retreat" && (!move || currentCombat.player.stamina < move.cost)) return unchanged;
 
   const combat = structuredClone(currentCombat);
@@ -90,7 +98,7 @@ export function resolveCombatTurn(currentCombat, moveId) {
   }
   function finish(status) {
     combat.status = status;
-    emit("result", null, results[status]);
+    emit("result", null, encounters[combat.encounterId].outcomes?.[status] || results[status]);
     return { combat, frames };
   }
   const entry = { round: combat.round, messages };
@@ -102,7 +110,7 @@ export function resolveCombatTurn(currentCombat, moveId) {
   if (move.restore) {
     const restored = Math.min(move.restore, combat.player.maxStamina - combat.player.stamina);
     combat.player.stamina += restored;
-    emit("restore", "player", `Recovered ${restored} sparring stamina${moveId === "guard" ? "; guard raised for this turn" : ""}.`);
+    emit("restore", "player", `Recovered ${restored} ${encounters[combat.encounterId].tutorial ? "stamina" : "sparring stamina"}${moveId === "guard" ? "; guard raised for this turn" : ""}.`);
   }
   if (move.multiplier) strike(combat, "player", move.multiplier, false, emit);
   if (combat.enemy.hp === 0) return finish("victory");
@@ -158,5 +166,6 @@ export function normalizeCombat(combat, area) {
   if (!Array.isArray(combat.log) || !combat.log.every((entry) => entry
     && Number.isSafeInteger(entry.round) && entry.round >= 0
     && Array.isArray(entry.messages) && entry.messages.every((message) => typeof message === "string"))) return null;
+  if (combat.encounterId === "chaos_fragment" && !isValidDivineTutorial(combat)) return null;
   return { ...combat, log: combat.log.slice(0, 50) };
 }

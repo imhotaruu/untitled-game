@@ -6,8 +6,9 @@ import { firstGatheringMasteryEvent } from "../data/storyEvents";
 import { processStoryEvents } from "./storySystem";
 import { normalizeExploration } from "./explorationSystem";
 import { normalizeCrafting } from "./craftingSystem";
+import { normalizeNarrative } from "./prologueSystem";
 
-export const CURRENT_SAVE_VERSION = 13;
+export const CURRENT_SAVE_VERSION = 15;
 
 function isPlainObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -87,6 +88,11 @@ export function migrateSaveState(savedState) {
   const migratedState = mergeWithDefaults(defaultState, savedState);
 
   migratedState.player = normalizePlayer(migratedState.player);
+  migratedState.narrative = normalizeNarrative(savedState.narrative);
+  // A real adventure/combat takes precedence over a malformed prologue marker.
+  if (savedState.combat || savedState.exploration?.pending || savedState.progress?.totalActions > 0) {
+    migratedState.narrative = normalizeNarrative(null);
+  }
   migratedState.crafting = normalizeCrafting(migratedState.crafting);
   migratedState.gatheringMastery = normalizeGatheringMastery(migratedState.gatheringMastery);
   migratedState.combat = normalizeCombat(migratedState.combat, migratedState.player.area);

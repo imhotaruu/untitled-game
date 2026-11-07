@@ -33,9 +33,9 @@ test("missing, malformed, and partial preferences fall back safely", (t) => {
     assert.deepEqual(loadPreferences(), DEFAULT_PREFERENCES);
   }
   assert.deepEqual(normalizePreferences({ combatPace: "fast", motion: "invalid", extra: true }),
-    { combatPace: "fast", motion: "full", confirmStoryActions: true });
+    { combatPace: "fast", textSpeed: "normal", motion: "full", confirmStoryActions: true });
   assert.deepEqual(normalizePreferences({ combatPace: "__proto__", motion: "reduced" }),
-    { combatPace: "normal", motion: "reduced", confirmStoryActions: true });
+    { combatPace: "normal", textSpeed: "normal", motion: "reduced", confirmStoryActions: true });
   assert.equal(normalizePreferences({ confirmStoryActions: false }).confirmStoryActions, false);
   for (const value of ["false", null, 0, [], {}]) {
     assert.equal(normalizePreferences({ confirmStoryActions: value }).confirmStoryActions, true);
@@ -44,7 +44,7 @@ test("missing, malformed, and partial preferences fall back safely", (t) => {
 
 test("preferences survive reload, slot changes, and deleting all game saves", (t) => {
   mockStorage(t);
-  const preferences = { combatPace: "slow", motion: "reduced", confirmStoryActions: false };
+  const preferences = { combatPace: "slow", textSpeed: "fast", motion: "reduced", confirmStoryActions: false };
   const state = createGameState();
   saveGameToSlot(1, state);
   assert.equal(savePreferences(preferences), true);
@@ -77,10 +77,10 @@ test("unavailable preference storage falls back and reports failed persistence",
 test("legacy device motion preferences migrate to Full without losing pacing", (t) => {
   const storage = mockStorage(t);
   storage.setItem(PREFERENCES_KEY, JSON.stringify({ combatPace: "slow", motion: "system" }));
-  assert.deepEqual(loadPreferences(), { combatPace: "slow", motion: "full", confirmStoryActions: true });
+  assert.deepEqual(loadPreferences(), { combatPace: "slow", textSpeed: "normal", motion: "full", confirmStoryActions: true });
   for (const motion of ["reduced", "full"]) {
     savePreferences({ combatPace: "fast", motion });
-    assert.deepEqual(loadPreferences(), { combatPace: "fast", motion, confirmStoryActions: true });
+    assert.deepEqual(loadPreferences(), { combatPace: "fast", textSpeed: "normal", motion, confirmStoryActions: true });
   }
 });
 
@@ -98,5 +98,18 @@ test("every combat message follows the requested reading times with safe fallbac
     assert.equal(getCombatFrameDuration(kind), 3500);
     assert.equal(getCombatFrameDuration(kind, "slow"), 5500);
     assert.equal(getCombatFrameDuration(kind, "fast"), 2000);
+  }
+});
+
+test("text speed saves independently from battle pace and old settings gain Normal", (t) => {
+  mockStorage(t);
+  for (const textSpeed of ["slow", "normal", "fast", "instant"]) {
+    savePreferences({ combatPace: "slow", textSpeed, motion: "reduced" });
+    assert.equal(loadPreferences().textSpeed, textSpeed);
+    assert.equal(loadPreferences().combatPace, "slow");
+    assert.equal(loadPreferences().motion, "reduced");
+  }
+  for (const textSpeed of [undefined, null, "invalid", "__proto__", {}, 0]) {
+    assert.equal(normalizePreferences({ textSpeed }).textSpeed, "normal");
   }
 });

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { combatMoves } from "../data/encounters";
+import { getCombatMoves, encounters } from "../data/encounters";
 import { items } from "../data/items";
+import { divinePhases, getDivinePhase, isDivineMoveAvailable } from "../data/divineTutorial";
 
 const categories = {
   root: { label: "Commands", description: "Choose a category or a defensive move." },
@@ -10,6 +11,12 @@ const categories = {
 };
 
 export default function BattleCommands({ combat, magicUnlocked, inventory, onMove, onPreview, detailsId, busy = false }) {
+  const tutorial = encounters[combat.encounterId].tutorial;
+  const combatMoves = getCombatMoves(combat);
+  const phase = tutorial ? getDivinePhase(combat) : null;
+  const magicAvailable = tutorial ? phase?.id !== "strike" : magicUnlocked;
+  const phaseIndex = divinePhases.indexOf(phase);
+  const unlockedMoves = tutorial ? combatMoves.filter((move) => divinePhases.findIndex((entry) => entry.moveId === move.id) <= phaseIndex) : combatMoves;
   const [menu, setMenu] = useState("root");
   const menuRef = useRef(null);
   const previousMenu = useRef(menu);
@@ -79,17 +86,19 @@ export default function BattleCommands({ combat, magicUnlocked, inventory, onMov
     <div className="battle-command-list" onPointerLeave={() => onPreview(categories[menu])}>
       {menu === "root" && <>
         {command({ id: "attack", ...categories.attack, kind: "battle", meta: "ST", onClick: () => openMenu("attack") })}
-        {command({ id: "magic", label: magicUnlocked ? "Magic" : "???",
-          description: magicUnlocked ? categories.magic.description : "Not yet discovered.",
-          kind: magicUnlocked ? "magic" : "normal", meta: magicUnlocked ? "MP" : "Locked",
-          disabled: !magicUnlocked, onClick: () => openMenu("magic") })}
-        {command({ id: "items", ...categories.items, meta: "Bag", onClick: () => openMenu("items") })}
+        {command({ id: "magic", label: magicAvailable ? "Magic" : "???",
+          description: magicAvailable ? categories.magic.description : "Not yet discovered.",
+          kind: magicAvailable ? "magic" : "normal", meta: magicAvailable ? "MP" : "Locked",
+          disabled: !magicAvailable, onClick: () => openMenu("magic") })}
+        {!tutorial && command({ id: "items", ...categories.items, meta: "Bag", onClick: () => openMenu("items") })}
       </>}
-      {(menu === "attack" ? combatMoves.filter((move) => move.category === "physical")
-        : menu === "root" ? combatMoves.filter((move) => move.category !== "physical") : []).map((move) => command({
-        ...move, label: move.id === "attack" ? "Strike" : move.label,
-        kind: move.id === "recover" ? "rest" : "battle", meta: move.cost ? `${move.cost} ST` : "Free",
-        disabled: combat.player.stamina < move.cost,
+      {(menu === "attack" ? unlockedMoves.filter((move) => move.category === "physical")
+        : menu === "magic" ? unlockedMoves.filter((move) => move.category === "magic")
+        : menu === "root" ? unlockedMoves.filter((move) => !move.category) : []).map((move) => command({
+        ...move, label: move.id === "attack" && !tutorial ? "Strike" : move.label,
+        kind: move.category === "magic" ? "magic" : move.id === "recover" ? "rest" : "battle",
+        meta: move.manaCost ? `${move.manaCost} MP` : move.cost ? `${move.cost} ST` : "Free",
+        disabled: combat.player.stamina < move.cost || (move.manaCost && combat.player.mp < move.manaCost) || (tutorial && !isDivineMoveAvailable(combat, move.id)),
         onClick: () => {
           if (busy) return;
           setMenu("root");
@@ -98,7 +107,7 @@ export default function BattleCommands({ combat, magicUnlocked, inventory, onMov
         },
       }))}
     </div>
-    {menu === "magic" && <p className="battle-menu-note">No spells learned yet.</p>}
+    {menu === "magic" && !tutorial && <p className="battle-menu-note">No spells learned yet.</p>}
     {menu === "items" && <div className="battle-item-list">
       <p className="battle-menu-note">Consumables are kept for your adventure. They cannot be used during this spar.</p>
       {consumables.length ? consumables.map(({ item, quantity }) => <article key={item.id} tabIndex={0}
@@ -106,6 +115,6 @@ export default function BattleCommands({ combat, magicUnlocked, inventory, onMov
         <strong>{item.label}</strong><span>×{quantity}</span>
       </article>) : <p className="battle-menu-note">No consumables in your inventory.</p>}
     </div>}
-    <button className="battle-end-spar" type="button" disabled={busy} onClick={() => onMove("retreat")}>End Spar</button>
+    {!tutorial && <button className="battle-end-spar" type="button" disabled={busy} onClick={() => onMove("retreat")}>End Spar</button>}
   </div>;
 }

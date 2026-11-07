@@ -6,10 +6,14 @@ import BattleCommands from "./BattleCommands";
 import useHitReaction from "./useHitReaction";
 import LogScrollControl from "./ui/LogScrollControl";
 import StatMeter from "./ui/StatMeter";
+import { encounters } from "../data/encounters";
+import BattleTutorialHelper from "./BattleTutorialHelper";
 
-const outcomeLabels = { victory: "Spar won", defeat: "Spar lost", retreat: "Spar ended" };
+const sparOutcomeLabels = { victory: "Spar won", defeat: "Spar lost", retreat: "Spar ended" };
 
-export default function CombatPanel({ combat, onMove, onDismiss, magicUnlocked, inventory, busy = false, frame = null, reducedMotion = false }) {
+export default function CombatPanel({ combat, onMove, onDismiss, magicUnlocked, inventory, busy = false, frame = null, reducedMotion = false, dialogueActive = false }) {
+  const tutorial = encounters[combat.encounterId].tutorial;
+  const outcomeLabels = tutorial ? { victory: "The way is open", defeat: "An ally answers", retreat: "Together at the veil" } : sparOutcomeLabels;
   const [preview, setPreview] = useState({ label: "Commands", description: "Choose a category or a defensive move." });
   const [overlay, setOverlay] = useState(null);
   const [awayFromLatest, setAwayFromLatest] = useState(false);
@@ -23,8 +27,8 @@ export default function CombatPanel({ combat, onMove, onDismiss, magicUnlocked, 
   const message = frame?.message || latest.messages.at(-1);
 
   useEffect(() => {
-    headingRef.current?.focus({ preventScroll: true });
-  }, [combat.status]);
+    if (!dialogueActive) headingRef.current?.focus({ preventScroll: true });
+  }, [combat.status, dialogueActive]);
 
   function openOverlay(type) {
     if (busy) return;
@@ -53,6 +57,8 @@ export default function CombatPanel({ combat, onMove, onDismiss, magicUnlocked, 
         </div>
       </header>
 
+      <div className={tutorial && !dialogueActive && active && !busy ? "battle-lesson-layout" : "battle-lesson-inactive"}>
+      {tutorial && !dialogueActive && !busy && <BattleTutorialHelper combat={combat} />}
       <div className="battle-enemy" data-defeated={combat.enemy.hp === 0}>
         <div className="enemy-figure" ref={enemyRef} aria-hidden="true">
           <span className="enemy-figure-aura" />
@@ -63,6 +69,7 @@ export default function CombatPanel({ combat, onMove, onDismiss, magicUnlocked, 
           <h3>{combat.enemy.name}</h3>
           <StatMeter label="HP" value={combat.enemy.hp} max={combat.enemy.maxHp} type="health" />
         </div>
+      </div>
       </div>
 
       {active && !busy && <div className="battle-intent">
@@ -85,8 +92,8 @@ export default function CombatPanel({ combat, onMove, onDismiss, magicUnlocked, 
         {active ? <BattleCommands combat={combat} magicUnlocked={magicUnlocked} inventory={inventory}
           busy={busy} onMove={onMove} onPreview={setPreview} detailsId={detailsId} /> : <div className="battle-result">
           <h2>{outcomeLabels[combat.status]}</h2>
-          <p>Your adventure health, stamina, and items are unchanged.</p>
-          <button className="primary" type="button" onClick={onDismiss}>Return to Adventure</button>
+          <p>{tutorial ? "Morveth, Aurelion, and Elaris need one final push. Return to their side." : "Your adventure health, stamina, and items are unchanged."}</p>
+          <button className="primary" type="button" onClick={onDismiss}>{tutorial ? "Reach the Seal" : "Return to Adventure"}</button>
         </div>}
       </section>
 
@@ -97,8 +104,9 @@ export default function CombatPanel({ combat, onMove, onDismiss, magicUnlocked, 
         {busy ? <div id={detailsId}><h3>Turn in progress</h3><p>Watch the exchange. Commands return when the turn finishes.</p></div> : active ? <div id={detailsId}>
           <h3>{preview.label}</h3><p>{preview.description}</p>
           {combat.player.stamina < preview.cost && <p className="battle-cost-warning">Not enough stamina. Guard or Recover to regain it.</p>}
-        </div> : <div><h3>{outcomeLabels[combat.status]}</h3><p>You can return to the adventure whenever you are ready.</p></div>}
-        <p className="battle-practice-note">Practice bout · Separate vitals<br />No rewards or lasting injuries</p>
+        </div> : <div><h3>{outcomeLabels[combat.status]}</h3><p>{tutorial ? "Continue when you are ready." : "You can return to the adventure whenever you are ready."}</p></div>}
+        {!tutorial && <p className="battle-practice-note">Practice bout · Separate vitals<br />No rewards or lasting injuries</p>}
+        {combat.tutorial?.guided && <p className="battle-buff">Guiding Star · Next physical strike guaranteed to hit</p>}
       </aside>
     </div>
 
@@ -119,12 +127,13 @@ export default function CombatPanel({ combat, onMove, onDismiss, magicUnlocked, 
         <div className="combat-vitals">
           <StatMeter label="Health" value={combat.player.hp} max={combat.player.maxHp} type="health" />
           <StatMeter label="Stamina" value={combat.player.stamina} max={combat.player.maxStamina} type="stamina" />
+          {tutorial && <StatMeter label="Mana" value={combat.player.mp} max={combat.player.maxMp} type="mana" />}
         </div>
         <dl className="combat-stat-details">
           <div><dt>Attack Power</dt><dd>{combat.player.attackPower}</dd></div>
           <div><dt>Defense</dt><dd>{combat.player.defense}</dd></div>
           <div><dt>Guard Power</dt><dd>{combat.player.guardPower}</dd></div>
-          <div><dt>Hit chance</dt><dd>{getHitChance(combat.player, combat.enemy)}%</dd></div>
+          <div><dt>Hit chance</dt><dd>{tutorial ? combat.tutorial?.guided ? "Guided strike guaranteed" : "Tutorial strike guaranteed" : `${getHitChance(combat.player, combat.enemy)}%`}</dd></div>
           <div><dt>Evasion</dt><dd>{combat.player.evasion}%</dd></div>
           <div><dt>Critical chance</dt><dd>{combat.player.criticalChance}%</dd></div>
         </dl>

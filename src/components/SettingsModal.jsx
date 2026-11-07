@@ -26,6 +26,17 @@ export default function SettingsModal({ preferences, saved, onChange, onClose })
         </select>
       </div>
       <div className="settings-field">
+        <label htmlFor={`${id}-text-speed`}>Dialogue &amp; narration speed</label>
+        <p id={`${id}-text-speed-help`}>Controls how quickly letters appear in story and battle dialogue. Click to reveal a line, then click again to advance. Instant shows each line immediately.</p>
+        <select id={`${id}-text-speed`} aria-describedby={`${id}-text-speed-help`} value={preferences.textSpeed}
+          onChange={(event) => onChange({ ...preferences, textSpeed: event.target.value })}>
+          <option value="slow">Slow</option>
+          <option value="normal">Normal</option>
+          <option value="fast">Fast</option>
+          <option value="instant">Instant</option>
+        </select>
+      </div>
+      <div className="settings-field">
         <label htmlFor={`${id}-motion`}>Battle motion</label>
         <p id={`${id}-motion-help`}>Reduced motion removes shaking, flashes, and sliding animations.</p>
         <select id={`${id}-motion`} aria-describedby={`${id}-motion-help`} value={preferences.motion}

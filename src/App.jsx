@@ -5,7 +5,11 @@ import { actions } from "./data/actions";
 import { areas } from "./data/areas";
 import { upgrades } from "./data/upgrades";
 
-import { createGameState } from "./engine/createGameState";
+import { createNewJourney } from "./engine/createGameState";
+import { advancePrologue, completeBirthScene, updateBirthIdentity, isInPrologue, performPrologueMove, skipPrologue } from "./engine/prologueSystem";
+import PrologueScreen from "./components/PrologueScreen";
+import DialogueHistoryProvider from "./components/DialogueHistoryProvider";
+import StoryPage from "./components/StoryPage";
 import { performAction } from "./engine/actionSystem";
 import { craftItem, getCraftingBlockReason } from "./engine/craftingSystem";
 import { getQuestStatus, isCraftingUnlocked } from "./engine/questSystem";
@@ -65,11 +69,16 @@ function App() {
 
   // UI feedback shares an atomic update with gameplay, but is never saved.
   const [session, setSession] = useState(() => ({
-    gameState: loadLastUsedSave() || createGameState(),
+    gameState: loadLastUsedSave() || createNewJourney(),
     itemFeedback: null,
     feedbackSequence: 0,
   }));
   const { gameState, itemFeedback } = session;
+  const [replayJourney, setReplayJourney] = useState(null);
+  const [storyReaderSession, setStoryReaderSession] = useState(0);
+  const journey = replayJourney || gameState;
+  const prologueActive = isInPrologue(journey);
+  const prologueCombat = prologueActive ? journey.narrative.combat : null;
 
   const setGameState = useCallback((update) => {
     setSession((current) => {
@@ -111,6 +120,7 @@ function App() {
   const discoveredResources = getDiscoveredResources(resources);
 
   useEffect(() => {
+    if (replayJourney) return;
     let lastTime = Date.now();
 
     const intervalId = setInterval(() => {
@@ -124,7 +134,23 @@ function App() {
     }, 100);
 
     return () => clearInterval(intervalId);
-  }, [setGameState]);
+  }, [setGameState, replayJourney]);
+
+  function updateJourney(update) {
+    if (replayJourney) setReplayJourney(update);
+    else setGameState(update);
+  }
+
+  function handlePrologueAdvance(sceneId) {
+    if (replayJourney && sceneId === "chapter") { setReplayJourney(null); return; }
+    updateJourney((current) => advancePrologue(current, sceneId));
+  }
+
+  function handlePrologueOptions(type) {
+    // Replays never save their temporary character over an adventure slot.
+    if (replayJourney && type !== "settings") return;
+    openModal(type);
+  }
 
   function addSystemLog(currentState, message) {
     return {
@@ -318,10 +344,12 @@ function App() {
     }
 
     setGameState(addSystemLog(savedState, `Loaded Slot ${slotId}.`));
+    setStoryReaderSession((current) => current + 1);
+    setReplayJourney(null);
     if (characterTab === "mastery" && !hasGatheringMastery(savedState)) setCharacterTab("overview");
     setFocusActionId(null);
     setPendingBattleId(null);
-    if (savedState.combat || savedState.exploration?.pending) setActivePage("main");
+    if (savedState.combat || savedState.exploration?.pending || isInPrologue(savedState)) setActivePage("main");
     refreshSaveSlots();
     closeModal();
   }
@@ -336,10 +364,12 @@ function App() {
   }
 
   function handleResetCurrentGame() {
+    setStoryReaderSession((current) => current + 1);
     setPendingStoryId(null);
     setFocusActionId(null);
     setPendingBattleId(null);
-    const resetState = createGameState();
+    const resetState = createNewJourney();
+    setReplayJourney(null);
 
     setActivePage("main");
     setCharacterTab("overview");
@@ -348,12 +378,14 @@ function App() {
   }
 
   function handleDeleteAllSaves() {
+    setStoryReaderSession((current) => current + 1);
     setPendingStoryId(null);
     setFocusActionId(null);
     setPendingBattleId(null);
     clearAllSaveSlots();
 
-    const resetState = createGameState();
+    const resetState = createNewJourney();
+    setReplayJourney(null);
 
     setActivePage("main");
     setCharacterTab("overview");
@@ -363,9 +395,28 @@ function App() {
   }
 
   return (
-    <div className={gameState.combat ? "app app-combat" : "app"} data-reduced-motion={reducedMotion}>
-      {gameState.combat ? <CombatScreen
+    <DialogueHistoryProvider key={`dialogue-${Boolean(replayJourney)}-${storyReaderSession}`}
+      storyEntries={!prologueActive && !replayJourney ? storyLog : undefined}>
+    <div className={gameState.combat || prologueCombat ? "app app-combat" : prologueActive ? "app app-prologue" : "app"} data-reduced-motion={reducedMotion}>
+      {prologueActive ? prologueCombat ? <CombatScreen key={`prologue-${Boolean(replayJourney)}-${storyReaderSession}`}
+        paused={Boolean(activeModal)}
+        combat={prologueCombat} areaLabel="The Veil" combatPace={preferences.combatPace} reducedMotion={reducedMotion}
+        textSpeed={preferences.textSpeed}
+        onMove={(moveId) => updateJourney((current) => performPrologueMove(current, moveId))}
+        onDismiss={() => handlePrologueAdvance("battle")} onOpenModal={handlePrologueOptions}
+        onSkipPrologue={() => updateJourney(skipPrologue)}
+        replay={Boolean(replayJourney)} onExitReplay={() => setReplayJourney(null)} />
+        : <PrologueScreen key={`${Boolean(replayJourney)}-${journey.narrative.sceneId}-${storyReaderSession}`}
+          paused={Boolean(activeModal)}
+          narrative={journey.narrative} replay={Boolean(replayJourney)} reducedMotion={reducedMotion}
+          textSpeed={preferences.textSpeed}
+          onIdentityChange={(identity) => updateJourney((current) => updateBirthIdentity(current, identity))}
+          onCompleteBirth={(identity) => updateJourney((current) => completeBirthScene(current, identity))}
+          onAdvance={handlePrologueAdvance} onSkip={() => updateJourney(skipPrologue)}
+          onExit={() => setReplayJourney(null)} onOpenModal={handlePrologueOptions} />
+        : gameState.combat ? <CombatScreen
         combatPace={preferences.combatPace}
+        textSpeed={preferences.textSpeed}
         reducedMotion={reducedMotion}
         magicUnlocked={Boolean(gameState.unlocks?.systems?.magic)}
         inventory={gameState.inventory}
@@ -386,7 +437,7 @@ function App() {
 
       <main
         className={
-          ["relationships", "crafting", "quests"].includes(activePage)
+          ["relationships", "crafting", "quests", "story"].includes(activePage)
             ? "game-layout full-page-layout"
             : activePage !== "main"
             ? "game-layout character-layout"
@@ -413,6 +464,8 @@ function App() {
             />
 
           </>
+        ) : activePage === "story" ? (
+          <StoryPage onReplay={() => { dismissItemFeedback(); setReplayJourney(createNewJourney()); }} />
         ) : activePage === "relationships" ? (
           <RelationshipsPage gameState={gameState} />
         ) : activePage === "crafting" ? (
@@ -473,6 +526,7 @@ function App() {
         />
       )}
     </div>
+    </DialogueHistoryProvider>
   );
 }
 

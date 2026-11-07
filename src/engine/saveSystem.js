@@ -181,6 +181,7 @@ export function getSaveSlotSummaries() {
       areaId: savedState?.player?.area || null,
       day: savedState?.player?.day || null,
       path: savedState?.player?.path || null,
+      storyStage: savedState?.narrative?.phase === "prologue" ? "Prologue" : savedState ? "Chapter 1 · Act 1" : null,
     });
   }
 

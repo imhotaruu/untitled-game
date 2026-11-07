@@ -364,6 +364,7 @@ function applyProgressMilestones(state, action) {
 }
 
 export function performAction(currentState, action, options = {}) {
+  if (currentState.narrative?.phase === "prologue") return currentState;
   if (currentState.combat || currentState.exploration?.pending) return currentState;
   const nextState = clone(currentState);
 

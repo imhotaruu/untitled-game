@@ -76,6 +76,7 @@ function SaveSlotCard({ mode, slot, onSave, onLoad, onDeleteSlot }) {
               {slot.playerName || "Player"} · Level {slot.level ?? 1}
             </span>
             <span>{areaLabel || "Unknown Area"}</span>
+            {slot.storyStage && <span>{slot.storyStage}</span>}
             <span>{slot.day || "Unknown Day"}</span>
             <span>{formatSlotDate(slot.savedAt)}</span>
           </>

@@ -1,10 +1,12 @@
 export const PREFERENCES_KEY = "new-untitled-game-preferences";
-export const DEFAULT_PREFERENCES = Object.freeze({ combatPace: "normal", motion: "full", confirmStoryActions: true });
+export const DEFAULT_PREFERENCES = Object.freeze({ combatPace: "normal", textSpeed: "normal", motion: "full", confirmStoryActions: true });
 
 export function normalizePreferences(value) {
   return {
     combatPace: ["slow", "normal", "fast"].includes(value?.combatPace)
       ? value.combatPace : DEFAULT_PREFERENCES.combatPace,
+    textSpeed: ["slow", "normal", "fast", "instant"].includes(value?.textSpeed)
+      ? value.textSpeed : DEFAULT_PREFERENCES.textSpeed,
     motion: ["reduced", "full"].includes(value?.motion)
       ? value.motion : DEFAULT_PREFERENCES.motion,
     confirmStoryActions: typeof value?.confirmStoryActions === "boolean"

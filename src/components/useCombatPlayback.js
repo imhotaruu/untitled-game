@@ -30,7 +30,7 @@ export default function useCombatPlayback(combat, onMove, combatPace = "normal")
     if (pendingRef.current) return;
     const result = resolveCombatTurn(combat, moveId);
     if (result.combat === combat) return;
-    if (moveId === "retreat") {
+    if (moveId === "retreat" || result.frames.length === 0) {
       onMove(moveId);
       return;
     }

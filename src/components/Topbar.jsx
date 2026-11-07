@@ -1,3 +1,5 @@
+import DialogueHistoryButton from "./DialogueHistoryButton";
+
 function Topbar({
   activePage,
   currentAreaLabel,
@@ -28,8 +30,8 @@ function Topbar({
           Character
         </button>
 
-        <button className="nav-btn nav-upcoming" type="button" disabled>
-          Story<span>Soon</span>
+        <button className="nav-btn" type="button" onClick={() => onChangePage("story")}>
+          Story
         </button>
         <button
           className={activePage === "relationships" ? "nav-btn active" : "nav-btn"}
@@ -58,6 +60,7 @@ function Topbar({
         </div>}
 
         <div className="top-actions">
+          <DialogueHistoryButton />
           <button type="button" aria-haspopup="dialog" onClick={() => onOpenModal("settings")}>
             Settings
           </button>

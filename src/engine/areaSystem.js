@@ -12,6 +12,7 @@ function addLog(logList, message) {
 }
 
 export function moveToArea(currentState, area) {
+  if (currentState.narrative?.phase === "prologue") return currentState;
   if (currentState.combat || currentState.exploration?.pending) return currentState;
   const nextState = clone(currentState);
 
